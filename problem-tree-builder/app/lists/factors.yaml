@@ -1,0 +1,37 @@
+factors:
+- name: Settlements in hazard zones
+  context: Environmental and physical
+- name: Steep terrain and loess soils
+  context: Environmental and physical
+- name: Snowmelt and heavy rain
+  context: Environmental and physical
+- name: Weak housing
+  context: Environmental and physical
+- name: High seismicity
+  context: Environmental and physical
+- name: Remote areas with single access road
+  context: Environmental and physical
+- name: Energy system fragility
+  context: Economic
+- name: Climate variability
+  context: Environmental and physical
+- name: Water and land competition
+  context: Security
+- name: Border dispute
+  context: Security
+- name: Inter-ethnic tension
+  context: Socio-cultural
+- name: Governance and corruption
+  context: Political
+- name: Poverty
+  context: Economic
+- name: Remittance dependence
+  context: Economic
+- name: Weak health system
+  context: Socio-cultural
+- name: Immunisation gaps
+  context: Socio-cultural
+- name: Livestock-based livelihoods
+  context: Economic
+- name: Mining and tailings
+  context: Economic

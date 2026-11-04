@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros.html" import help %}
+{% block content %}
+<div class="page-head"><h1>Upload the completed hazard list</h1>
+<p>Staff fill in the standardised workbook. The app reads tab 3, checks every row, and builds the parts of the problem tree that can be counted. The rest stays with you.</p></div>
+{% call help("upload") %}<ul><li>Upload the workbook your colleagues filled in. Only tab 3, the hazard list, is read.</li>{% if has_example %}<li>Not ready yet? Use the example workbook to see how the rest works.</li>{% endif %}<li>The file stays the source: if something is wrong later, fix it in Excel and upload again. Uploading again keeps your scores and wording.</li></ul>{% endcall %}
+{% if error %}<p class="alert">{{ error }}</p>{% endif %}
+<div class="upload-grid"><div>
+  <form method="post" enctype="multipart/form-data" action="{{ url_for('main.upload_post', tree_id=tree.id) }}" id="uploadForm">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <label class="drop" id="drop" for="fileInput">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      <h2>Drop the workbook here</h2>
+      <p>Excel file (.xlsx) using the standardised template for {{ tree.country }}.</p>
+      <span class="btn primary">Choose a file</span>
+    </label>
+    <input type="file" id="fileInput" name="workbook" accept=".xlsx,.xlsm" class="sr-only">
+  </form>
+  {% if has_example %}
+  <div class="or">or</div>
+  <form method="post" action="{{ url_for('main.use_example', tree_id=tree.id) }}" class="card sample">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <span class="fileicon" aria-hidden="true">XLSX</span>
+    <div><strong>{{ tree.country }} example workbook</strong><span>Real events rewritten into the standardised columns. Check figures before using them.</span></div>
+    <button type="submit" class="btn">Use the example</button>
+  </form>
+  {% endif %}
+</div>
+<section class="card"><div class="card-head"><h2>Before you upload</h2><p>A quick check saves a round of fixes</p></div><div class="card-body">
+  <ul class="checklist">
+    <li>Tab 3 has one row for each significant event.</li>
+    <li>The yellow columns are filled in for every row.</li>
+    <li>Several {{ tree.setup.area_column|lower }} or tags in one cell are separated by semicolons.</li>
+    <li>Tab names and column headers are unchanged.</li>
+    <li>Figures you couldn’t check are marked Verified: No.</li>
+  </ul>
+  <div class="btn-row" style="margin-top:8px"><a class="btn" href="{{ url_for('main.template', country=tree.country) }}">Get the blank template</a></div>
+</div></section></div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/upload.js') }}"></script>{% endblock %}

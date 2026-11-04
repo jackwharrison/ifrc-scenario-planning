@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import help %}
+{% block content %}
+{% set L = {} %}{% for l in view.layers %}{% set _ = L.update({l.key: l}) %}{% endfor %}
+{% macro cell(b, attrs='') %}
+  <td class="dc" {{ attrs|safe }}><p class="dl">{{ b.title }}</p>
+  {% set kept = (b.lines|rejectattr('out')|map(attribute='text')|list) + (b.mine|map(attribute='text')|list) %}
+  {% if kept %}<ul>{% for t in kept %}<li>{{ t }}</li>{% endfor %}</ul>{% else %}<p class="gap">To be completed</p>{% endif %}</td>
+{% endmacro %}
+<div class="page-head"><h1>Export</h1><p>Preview of the Word document, laid out like the DRC problem tree: one landscape page, priorities at the top and context at the bottom.</p></div>
+{% call help("export") %}<ul><li>Go through the list under the preview. None of it blocks the export, but each open point is a gap a reader will notice.</li><li>Download the Word file and share it for review before it goes further.</li><li>Saving a version keeps a copy of this tree, so you can compare it with the next update.</li></ul>{% endcall %}
+{% if request.args.get('saved') %}<p class="ok-note">Version saved.</p>{% endif %}
+<div class="doc-scroll"><div class="doc" aria-label="Word document preview">
+  <div class="doc-top"><div><h2>{{ meta.country }}: {{ meta.type_name|lower }}</h2><p class="sub">Problem tree, draft. Based on {{ meta.events }} recorded events ({{ meta.file }}).</p></div><img src="{{ url_for('static', filename='img/ifrc-logo.png') }}" alt="IFRC"></div>
+  <table class="dt"><tr><th class="dh" style="background:{{ L.priorities.color }}" colspan="3">Current priorities</th></tr><tr>{% for b in L.priorities.boxes %}{{ cell(b) }}{% endfor %}</tr></table>
+  <div class="dup" aria-hidden="true">▲</div>
+  {% set c = L.conditions.boxes %}
+  <table class="dt"><tr><th class="dh" style="background:{{ L.conditions.color }}" colspan="2">Humanitarian conditions – expected consequences</th></tr>
+    <tr>{{ cell(c[0], 'rowspan="2" style="width:50%"') }}{{ cell(c[1]) }}</tr><tr>{{ cell(c[2]) }}</tr></table>
+  <div class="dup" aria-hidden="true">▲</div>
+  <table class="dt"><tr><th class="dh" style="background:{{ L.impact.color }}" colspan="4">Impact{% if view.impact_title %} – {{ view.impact_title }}{% endif %}</th></tr><tr>{% for b in L.impact.boxes %}{{ cell(b) }}{% endfor %}</tr></table>
+  <div class="dup" aria-hidden="true">▲</div>
+  <table class="dt"><tr><th class="dh" style="background:{{ L.shock.color }}" colspan="4">Shock – {{ view.shock_title[:1]|upper }}{{ view.shock_title[1:] }}</th></tr><tr>{% for b in L.shock.boxes %}{{ cell(b) }}{% endfor %}</tr></table>
+  <div class="dup" aria-hidden="true">▲</div>
+  <table class="dt"><tr><th class="dh" style="background:{{ L.context.color }}" colspan="5">Context</th></tr><tr>{% for b in L.context.boxes %}{{ cell(b) }}{% endfor %}</tr></table>
+  <p class="dfoot">{{ meta.classification }}</p>
+</div></div>
+<div class="export-grid" style="margin-top:20px">
+<section class="card"><div class="card-head"><h2>Before you share</h2><p>Nothing here blocks the export</p></div><div class="card-body">
+  <ul class="checks">{% for ok, text in checks %}<li><span class="mark {{ 'y' if ok else 'n' }}" aria-label="{{ 'Done' if ok else 'Open' }}">{{ '✓' if ok else '!' }}</span><span>{{ text }}</span></li>{% endfor %}</ul>
+  <div class="btn-row"><a class="btn primary" href="{{ url_for('main.export_docx', tree_id=tree.id) }}">Download Word</a>
+  <form method="post" action="{{ url_for('main.save_version', tree_id=tree.id) }}" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button type="submit" class="btn">Save as version</button></form></div>
+</div></section>
+<section class="card"><div class="card-head"><h2>Saved versions</h2></div><div class="card-body">
+  {% if versions %}<ul class="versions">{% for v in versions %}<li>{{ v.saved_at }}, {{ v.saved_by }}</li>{% endfor %}</ul>{% else %}<p class="muted">None yet.</p>{% endif %}
+</div></section></div>
+{% endblock %}

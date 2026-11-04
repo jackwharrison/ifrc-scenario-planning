@@ -1,0 +1,289 @@
+"""Pages: start, upload, check, score, tree (with map) and export."""
+import io
+import os
+
+from flask import (Blueprint, abort, current_app, jsonify, redirect, render_template, request, send_file,
+                   url_for)
+
+from . import current_user, lists, storage
+from .export.word import build_docx
+from .tree.rules import BANDS, HIGH_RISK, apply_edits, build_tree, hazards_present, risk_band
+from .workbook.checks import check_events
+from .workbook.columns import MONTHS
+from .workbook.reader import read_workbook
+from .workbook.template import build_template
+
+bp = Blueprint("main", __name__)
+SAMPLES = os.path.join(os.path.dirname(__file__), "..", "samples")
+
+TREE_TYPES = {
+    "risk": {
+        "name": "Risk profile", "available": True,
+        "what": "For stable or hazard-prone countries, such as Lithuania, Georgia or Kyrgyzstan. Built from past "
+                "events and risk scores. Figures stay current for about 12 months.",
+        "needs": ["The hazard workbook with tab 3 filled in: one row for each significant event since about 2000.",
+                  "Someone to score likelihood and impact for the next 12 months, ideally with the National Society.",
+                  "People who can write the parts that can’t be counted: political and economic context, affected "
+                  "groups, expected consequences."],
+        "note": "Few recorded events, as in many stable countries? The tree says where there are too few to show a "
+                "pattern, and leans more on scenarios and context.",
+    },
+    "crisis": {
+        "name": "Crisis analysis", "available": False,
+        "what": "For protracted or sudden crises, such as Sudan or eastern DRC. Adds a sheet of current figures to "
+                "the workbook. Figures go out of date after about 3 months.",
+        "needs": ["The hazard workbook with tab 3 filled in, including ongoing events such as the conflict itself.",
+                  "The situation figures sheet: people in need, displaced, food insecurity and disease, each with an "
+                  "area, a date and a source, none older than 3 months.",
+                  "Up-to-date information on humanitarian access, from operations or the National Society.",
+                  "People who can write context and security analysis with care for neutrality."],
+        "note": "Crisis trees describe armed actors and access constraints. Check who should see the tree before "
+                "you share it.",
+    },
+}
+STEPS = [("start", "Start"), ("upload", "Upload"), ("check", "Check"), ("scores", "Score risks"),
+         ("tree", "Review tree"), ("export", "Export")]
+
+
+def load(tree_id):
+    tree = storage.get_tree(tree_id)
+    if not tree:
+        abort(404)
+    tree["setup"] = lists.country_setup(tree["country"]) or {}
+    tree["type"] = TREE_TYPES[tree["tree_type"]]
+    return tree
+
+
+def reached(tree):
+    d = tree["data"]
+    if d.get("events"):
+        return 5
+    if d.get("problem") or d.get("total") is not None:
+        return 2
+    return 1
+
+
+def page(template, tree=None, step=None, **kw):
+    return render_template(template, tree=tree, step=step, steps=STEPS,
+                           reached=reached(tree) if tree else 0, **kw)
+
+
+def view_for(tree):
+    d = tree["data"]
+    t = build_tree(d.get("events", []), d.get("scores", {}), tree["country"])
+    if not t:
+        return None
+    return apply_edits(t, d.get("edits", {}), d.get("out", {}), d.get("manual", {}))
+
+
+# ---------- start ----------
+
+@bp.get("/")
+def home():
+    return page("home.html", trees=storage.list_trees())
+
+
+@bp.get("/start")
+def start():
+    return page("start.html", step=0, types=TREE_TYPES, countries=lists.countries(),
+                ready=lists.ready_countries())
+
+
+@bp.post("/start")
+def start_post():
+    country, tree_type = request.form.get("country", ""), request.form.get("tree_type", "risk")
+    if not lists.country_setup(country) or not TREE_TYPES.get(tree_type, {}).get("available"):
+        abort(400, "This country or type of tree is not set up yet.")
+    tree_id = storage.create_tree(country, tree_type, current_user())
+    return redirect(url_for("main.upload", tree_id=tree_id))
+
+
+@bp.get("/template/<country>.xlsx")
+def template(country):
+    if not lists.country_setup(country):
+        abort(404)
+    return send_file(io.BytesIO(build_template(country)), as_attachment=True,
+                     download_name=f"Hazard_list_template_{lists.slug(country)}.xlsx",
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+# ---------- upload and check ----------
+
+@bp.get("/trees/<int:tree_id>/upload")
+def upload(tree_id):
+    tree = load(tree_id)
+    example = tree["setup"].get("example_workbook")
+    has_example = bool(example) and os.path.exists(os.path.join(SAMPLES, example))
+    return page("upload.html", tree, 1, has_example=has_example)
+
+
+def _process(tree, filename, content):
+    result = read_workbook(content, tree["setup"]["area_column"])
+    data = tree["data"]
+    for key in ("events", "left_out", "issues", "total", "problem"):
+        data.pop(key, None)
+    data["file"] = filename
+    if result.problem:
+        data["problem"] = result.problem
+    else:
+        used, left_out, issues = check_events(result.events, tree["country"])
+        data.update(events=used, left_out=[e["_row"] for e in left_out], issues=issues, total=len(result.events))
+    storage.add_upload(tree["id"], filename, current_user(), content)
+    storage.save_data(tree["id"], data)
+
+
+@bp.post("/trees/<int:tree_id>/upload")
+def upload_post(tree_id):
+    tree = load(tree_id)
+    f = request.files.get("workbook")
+    if not f or not f.filename.lower().endswith((".xlsx", ".xlsm")):
+        return page("upload.html", tree, 1, error="Choose an Excel file (.xlsx) to upload.", has_example=False), 400
+    _process(tree, os.path.basename(f.filename), f.read())
+    return redirect(url_for("main.check", tree_id=tree_id))
+
+
+@bp.post("/trees/<int:tree_id>/use-example")
+def use_example(tree_id):
+    tree = load(tree_id)
+    name = tree["setup"].get("example_workbook")
+    if not name:
+        abort(404)
+    with open(os.path.join(SAMPLES, name), "rb") as fh:
+        _process(tree, name, fh.read())
+    return redirect(url_for("main.check", tree_id=tree_id))
+
+
+@bp.get("/trees/<int:tree_id>/check")
+def check(tree_id):
+    tree = load(tree_id)
+    d = tree["data"]
+    warn_rows = {r["row"] for g in d.get("issues", []) if g["level"] == "warning" for r in g["rows"]}
+    return page("check.html", tree, 2, warn_rows=len(warn_rows))
+
+
+# ---------- scores ----------
+
+@bp.route("/trees/<int:tree_id>/scores", methods=["GET", "POST"])
+def scores(tree_id):
+    tree = load(tree_id)
+    events = tree["data"].get("events") or []
+    if not events:
+        return redirect(url_for("main.upload", tree_id=tree_id))
+    hazards = hazards_present(events)
+    if request.method == "POST":
+        new = {}
+        for h in hazards:
+            l, i = request.form.get(f"l::{h['key']}"), request.form.get(f"i::{h['key']}")
+            new[h["key"]] = {"l": int(l) if l and l.isdigit() else None, "i": int(i) if i and i.isdigit() else None}
+        tree["data"]["scores"] = new
+        storage.save_data(tree_id, tree["data"])
+        return redirect(url_for("main.tree", tree_id=tree_id) if request.form.get("next") else
+                        url_for("main.scores", tree_id=tree_id))
+    sc = tree["data"].get("scores", {})
+    for h in hazards:
+        s = sc.get(h["key"]) or {}
+        h["l"], h["i"] = s.get("l"), s.get("i")
+        h["r"] = h["l"] * h["i"] if h["l"] and h["i"] else 0
+        h["band"] = risk_band(h["r"])
+    return page("scores.html", tree, 3, hazards=hazards, high=HIGH_RISK, bands=BANDS)
+
+
+# ---------- tree ----------
+
+def tree_payload(tree):
+    events = tree["data"].get("events", [])
+    return {
+        "view": view_for(tree),
+        "events": [{k: e.get(k) for k in ("_row", "year", "start", "type", "sub", "areas", "killed", "affected",
+                                          "displaced", "houses")} for e in events],
+        "tiles": tree["setup"].get("areas", []),
+        "areaLabel": tree["setup"].get("area_label", "area"),
+        "months": MONTHS,
+        "editUrl": url_for("main.edit", tree_id=tree["id"]),
+        "scoresUrl": url_for("main.scores", tree_id=tree["id"]),
+    }
+
+
+@bp.get("/trees/<int:tree_id>/tree")
+def tree(tree_id):
+    t = load(tree_id)
+    if not t["data"].get("events"):
+        return redirect(url_for("main.upload", tree_id=tree_id))
+    return page("tree.html", t, 4, payload=tree_payload(t))
+
+
+@bp.post("/trees/<int:tree_id>/edit")
+def edit(tree_id):
+    """Small JSON API used by the tree page: edit wording, leave out a line, add or remove a hand-written line."""
+    t = load(tree_id)
+    d = t["data"]
+    body = request.get_json(silent=True) or {}
+    action, line_id, box_id = body.get("action"), body.get("line"), body.get("box")
+    text = (body.get("text") or "").strip()[:2000]
+    edits, out, manual = d.setdefault("edits", {}), d.setdefault("out", {}), d.setdefault("manual", {})
+    if action == "save" and line_id and text:
+        edits[line_id] = text
+    elif action == "reset" and line_id:
+        edits.pop(line_id, None)
+    elif action == "toggle" and line_id:
+        out[line_id] = not out.get(line_id)
+    elif action == "add" and box_id and text:
+        mine = manual.setdefault(box_id, [])
+        mine.append({"id": f"u{len(mine) + 1}-{os.urandom(3).hex()}", "text": text, "by": current_user()})
+    elif action == "remove" and box_id:
+        manual[box_id] = [m for m in manual.get(box_id, []) if m["id"] != body.get("id")]
+    else:
+        abort(400)
+    storage.save_data(tree_id, d)
+    return jsonify(tree_payload(load(tree_id)))
+
+
+# ---------- export ----------
+
+def _meta(t):
+    d = t["data"]
+    return {"country": t["country"], "type_name": t["type"]["name"], "events": len(d.get("events", [])),
+            "file": d.get("file", ""), "classification": current_app.config["CLASSIFICATION"]}
+
+
+@bp.get("/trees/<int:tree_id>/export")
+def export(tree_id):
+    t = load(tree_id)
+    view = view_for(t)
+    if not view:
+        return redirect(url_for("main.upload", tree_id=tree_id))
+    d = t["data"]
+    hazards = hazards_present(d["events"])
+    scored = sum(1 for h in hazards if (d.get("scores", {}).get(h["key"]) or {}).get("l")
+                 and (d.get("scores", {}).get(h["key"]) or {}).get("i"))
+    manual_empty = [b["title"] for l in view["layers"] for b in l["boxes"] if b["kind"] == "manual" and not b["mine"]]
+    unverified = sum(1 for e in d["events"] if str(e.get("verified", "")).lower() != "yes")
+    warn_rows = len({r["row"] for g in d.get("issues", []) if g["level"] == "warning" for r in g["rows"]})
+    checks = [
+        (scored == len(hazards), f"Risk scores: {scored} of {len(hazards)} hazards scored."),
+        (not manual_empty, f"Boxes still to write: {', '.join(manual_empty)}." if manual_empty else "All analyst boxes have content."),
+        (not unverified, f"{unverified} events with unverified figures feed the tree." if unverified else "All figures verified."),
+        (not warn_rows, f"{warn_rows} rows had warnings at upload." if warn_rows else "No upload warnings."),
+    ]
+    return page("export.html", t, 5, view=view, meta=_meta(t), checks=checks, versions=storage.list_versions(tree_id))
+
+
+@bp.get("/trees/<int:tree_id>/export.docx")
+def export_docx(tree_id):
+    t = load(tree_id)
+    view = view_for(t)
+    if not view:
+        abort(404)
+    data = build_docx(view, _meta(t))
+    return send_file(io.BytesIO(data), as_attachment=True,
+                     download_name=f"Problem_tree_{lists.slug(t['country'])}.docx",
+                     mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+
+@bp.post("/trees/<int:tree_id>/versions")
+def save_version(tree_id):
+    t = load(tree_id)
+    view = view_for(t)
+    if view:
+        storage.add_version(tree_id, current_user(), {"meta": _meta(t), "view": view, "scores": t["data"].get("scores", {})})
+    return redirect(url_for("main.export", tree_id=tree_id, saved=1))

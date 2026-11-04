@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head" id="guide"><h1>Build a problem tree</h1>
+<p>This tool turns a completed hazard workbook into a problem tree in IFRC layout. It counts what can be counted, shows you how, and leaves the judgement to you. Expect to spend most of your time on steps 3 and 4.</p></div>
+<form method="post" action="{{ url_for('main.start_post') }}" id="startForm">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">
+<input type="hidden" name="country" id="countryValue" value="{{ ready[0] if ready else '' }}">
+<div class="start-grid"><div>
+  <section class="card"><div class="card-head"><h2>1. Choose the country and type of tree</h2></div><div class="card-body">
+    <div class="field combo"><label for="countryInput"><span style="font-weight:600;font-size:.9rem">Country</span></label>
+      <div class="combo-wrap"><input id="countryInput" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="countryList" autocomplete="off" spellcheck="false" placeholder="Type to search, for example Kyr or DRC" value="{{ ready[0] if ready else '' }}">
+      <ul id="countryList" role="listbox" class="combo-list" hidden></ul></div>
+      <p class="combo-status" id="countryStatus"></p></div>
+    <div class="field" role="radiogroup" aria-label="Type of tree"><span>Type of tree</span><div class="choices">
+      {% for key, t in types.items() %}
+      <label class="choice"><input type="radio" name="tree_type" value="{{ key }}" {{ 'checked' if loop.first }}><strong>{{ t.name }}</strong><span>{{ t.what }}</span>{% if not t.available %}<span class="tag man">Not built yet</span>{% endif %}</label>
+      {% endfor %}
+    </div></div>
+  </div></section>
+  {% for key, t in types.items() %}
+  <section class="card needs-card {{ '' if loop.first else 'hidden' }}" data-type="{{ key }}" style="margin-top:16px"><div class="card-head"><h2>2. What you’ll need</h2><p>For a {{ t.name|lower }}</p></div><div class="card-body">
+    <ul class="needs">{% for n in t.needs %}<li>{{ n }}</li>{% endfor %}</ul><p style="margin-top:10px;font-size:.88rem;color:var(--muted)">{{ t.note }}</p>
+  </div></section>
+  {% endfor %}
+</div>
+<section class="card"><div class="card-head"><h2>3. The five steps</h2></div><div class="card-body">
+  <ol class="flow">
+    <li><strong>Upload<span class="tag auto">Automatic</span></strong><span>Upload the completed workbook. The tool reads tab 3.</span><span class="who">Who: the country focal point or desk officer.</span></li>
+    <li><strong>Check<span class="tag auto">Automatic</span></strong><span>Every row is checked. Rows with errors are left out; warnings show what to fix in Excel.</span><span class="who">Who: whoever uploaded, fixing rows in Excel if needed.</span></li>
+    <li><strong>Score risks<span class="tag man">You</span></strong><span>Set likelihood and impact for each hazard. High scores become priority hazards.</span><span class="who">Who: the analyst, ideally with the National Society.</span></li>
+    <li><strong>Review tree<span class="tag auto">Automatic</span><span class="tag man">You</span></strong><span>Check the counted boxes, then write the boxes marked “Needs you”.</span><span class="who">Who: the analyst.</span></li>
+    <li><strong>Export<span class="tag auto">Automatic</span></strong><span>Download the Word document in the problem tree layout and save a version.</span><span class="who">Who: the analyst, then a reviewer before sharing.</span></li>
+  </ol>
+</div></section></div>
+<div class="btn-row"><button type="submit" class="btn primary" id="startBtn">Start with step 1</button><a class="btn" id="templateLink" href="#">Download the template</a></div>
+<p class="blocker hidden" id="blocker" role="status"></p>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>window.START = {{ {"countries": countries, "ready": ready, "templateBase": url_for('main.template', country='__C__')}|tojson }};</script>
+<script src="{{ url_for('static', filename='js/start.js') }}"></script>
+{% endblock %}

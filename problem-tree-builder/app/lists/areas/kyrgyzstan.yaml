@@ -1,0 +1,21 @@
+# Country set-up for Kyrgyzstan.
+# A country is "ready" in the app when a file like this exists in app/lists/areas/.
+#
+# pcode: fill in from the OCHA administrative boundaries for Kyrgyzstan on HDX
+#        (Common Operational Dataset, admin level 1). Left empty on purpose:
+#        copy the codes from the official dataset rather than typing them from memory.
+# tile:  [row, column] position in the schematic map grid (4 columns, 3 rows).
+#        Replace with real boundaries later (see README, "Maps").
+country: Kyrgyzstan
+area_column: Oblasts        # header of the area column in tab 3 of the workbook
+area_label: oblast          # how areas are called in sentences
+areas:
+  - {name: Talas,      pcode: "", tile: [0, 0]}
+  - {name: Bishkek,    pcode: "", tile: [0, 1], city: true}
+  - {name: Chui,       pcode: "", tile: [0, 2]}
+  - {name: Issyk-Kul,  pcode: "", tile: [0, 3]}
+  - {name: Jalal-Abad, pcode: "", tile: [1, 1]}
+  - {name: Naryn,      pcode: "", tile: [1, 2]}
+  - {name: Batken,     pcode: "", tile: [2, 0]}
+  - {name: Osh,        pcode: "", tile: [2, 1]}
+example_workbook: kyrgyzstan_example.xlsx   # in /samples, offered on the upload page

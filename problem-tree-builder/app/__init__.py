@@ -1,0 +1,53 @@
+"""Problem tree builder: turns a completed hazard workbook into a problem tree and a Word document."""
+import os
+import secrets
+
+from flask import Flask, abort, request, session
+
+from . import storage
+
+
+def current_user():
+    """Azure App Service authentication passes the signed-in user in this header. Locally there is none."""
+    return request.headers.get("X-MS-CLIENT-PRINCIPAL-NAME", "local user")
+
+
+def create_app(test_config=None):
+    app = Flask(__name__)
+    app.config.update(
+        SECRET_KEY=os.environ.get("SECRET_KEY") or secrets.token_hex(32),
+        DATABASE_PATH=os.environ.get("DATABASE_PATH", os.path.join(app.instance_path, "app.db")),
+        MAX_CONTENT_LENGTH=10 * 1024 * 1024,      # 10 MB is far more than a hazard workbook needs
+        CLASSIFICATION=os.environ.get("CLASSIFICATION", "Internal"),
+        SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE", "true").lower() == "true",
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+    )
+    if test_config:
+        app.config.update(test_config)
+    if not os.environ.get("SECRET_KEY") and not app.config.get("TESTING"):
+        app.logger.warning("SECRET_KEY is not set. Sessions will reset on every restart. Set it in the App Service settings.")
+
+    storage.init_db(app)
+
+    @app.before_request
+    def csrf_protect():
+        if request.method == "POST":
+            token = session.get("csrf")
+            sent = request.form.get("csrf") or request.headers.get("X-CSRF-Token")
+            if not token or sent != token:
+                abort(400, "The form expired. Go back, reload the page and try again.")
+
+    @app.context_processor
+    def inject():
+        if "csrf" not in session:
+            session["csrf"] = secrets.token_hex(16)
+        return {"csrf_token": session["csrf"], "user": current_user()}
+
+    @app.get("/health")
+    def health():
+        return {"status": "ok"}
+
+    from .routes import bp
+    app.register_blueprint(bp)
+    return app

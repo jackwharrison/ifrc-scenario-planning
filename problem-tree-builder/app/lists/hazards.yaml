@@ -1,0 +1,64 @@
+hazard_types:
+  Meteorological:
+  - Cold wave
+  - Heatwave
+  - Drought
+  - Snow storm / blizzard
+  - Heavy snowfall
+  - Strong wind / gale
+  - Dust storm
+  - Hail
+  - Lightning
+  - Fog
+  - Frost
+  Hydrological:
+  - Flash flood
+  - Fluvial (river) flood
+  - Snowmelt flood
+  - Glacial lake outburst flood (GLOF)
+  - Surface water flood
+  - Mudflow / debris flow
+  Geohazards:
+  - Earthquake
+  - Landslide
+  - Rockfall / rockslide
+  - Avalanche
+  - Ground shaking
+  - Liquefaction
+  - Subsidence
+  Environmental:
+  - Water scarcity
+  - Land degradation
+  - Desertification
+  - Pasture degradation
+  - Deforestation
+  - Soil erosion
+  - Pollution
+  Technological:
+  - Tailings dam failure
+  - Dam / reservoir failure
+  - Mining accident
+  - Industrial / chemical accident
+  - Critical infrastructure failure
+  - Power outage / blackout
+  - Transport accident
+  Biological:
+  - Measles
+  - Influenza / ARI
+  - COVID-19
+  - Brucellosis
+  - Echinococcosis
+  - Tuberculosis
+  - Anthrax
+  - Foot-and-mouth disease
+  - Avian influenza
+  - Locust / pest infestation
+  Societal:
+  - International armed conflict
+  - Border armed clashes
+  - Inter-ethnic violence
+  - Civil unrest
+  - Political instability
+  - Economic / financial shock
+  - Energy crisis
+  - Displacement influx

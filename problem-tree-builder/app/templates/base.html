@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{% block title %}Problem tree builder{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="{{ url_for('main.home') }}"><img alt="IFRC" src="{{ url_for('static', filename='img/ifrc-logo.png') }}"></a>
+  <a class="app applink" href="{{ url_for('main.home') }}"><strong>Problem tree builder</strong><span>Anticipatory risk analysis</span></a>
+  <span class="spacer"></span>
+  <nav class="navlinks" aria-label="Main">
+    <a href="{{ url_for('main.home') }}">All trees</a>
+    <a href="{{ url_for('main.start') }}#guide">How it works</a>
+  </nav>
+  {% if tree %}<span class="country">{{ tree.country }}, {{ tree.type.name|lower }}</span>{% endif %}
+</header>
+{% if step is not none %}
+<nav class="steps" aria-label="Steps">
+  {% for key, label in steps %}
+    {% set n = loop.index0 %}
+    {% set cls = 'step' ~ (' done' if n < step else '') %}
+    {% if n == step %}
+      <span class="{{ cls }}" aria-current="step"><span class="num">{% if n == 0 %}<svg width="10" height="11" viewBox="0 0 10 11" aria-hidden="true"><path d="M1.5 10.5V1M1.5 1.5h6l-1.5 2.2 1.5 2.3h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>{% else %}{{ n }}{% endif %}</span><span class="lbl">{{ label }}</span></span>
+    {% elif tree and n >= 1 and n <= reached %}
+      <a class="{{ cls }}" href="{{ url_for('main.' ~ key, tree_id=tree.id) }}"><span class="num">{{ n }}</span><span class="lbl">{{ label }}</span></a>
+    {% else %}
+      <span class="{{ cls }}" style="opacity:{{ '1' if n < step else '.5' }}"><span class="num">{% if n == 0 %}<svg width="10" height="11" viewBox="0 0 10 11" aria-hidden="true"><path d="M1.5 10.5V1M1.5 1.5h6l-1.5 2.2 1.5 2.3h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>{% else %}{{ n }}{% endif %}</span><span class="lbl">{{ label }}</span></span>
+    {% endif %}
+  {% endfor %}
+</nav>
+{% endif %}
+<main>
+{% block content %}{% endblock %}
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import help %}
+{% block content %}
+{% set d = tree.data %}
+<div class="page-head"><h1>Check: {{ d.file }}</h1>
+{% if not d.problem %}<p>{{ d.total }} rows read from tab 3. Rows with errors are left out of the tree. Warnings don’t block anything, but each one makes part of the tree thinner.</p>{% endif %}</div>
+{% if d.problem %}
+  {% set p = d.problem %}
+  <div class="notice"><h2>This file can’t be used yet</h2>
+  {% if p.kind == 'old_layout' %}
+    <p>Tab <b>{{ p.sheet }}</b> has {{ p.rows }} rows, but uses an older layout. These columns are missing:</p>
+    <div class="chips">{% for m in p.missing %}<span class="chip miss">{{ m }}</span>{% endfor %}</div>
+    <p style="margin-top:12px">Copy the rows into the latest template for {{ tree.country }}, then upload again.</p>
+  {% elif p.kind == 'no_sheet' %}<p>No tab with “Hazard list” in its name was found. Tabs in this file: {{ p.sheets|join(', ') }}.</p>
+  {% elif p.kind == 'no_header' %}<p>The hazard list tab has no header row with “Year” and “Hazard type”.</p>
+  {% else %}<p>The file could not be read as an Excel workbook.</p>{% endif %}
+  </div>
+  <div class="btn-row"><a class="btn primary" href="{{ url_for('main.upload', tree_id=tree.id) }}">Upload another file</a><a class="btn" href="{{ url_for('main.template', country=tree.country) }}">Get the blank template</a></div>
+{% else %}
+  {% call help("check") %}<ul><li><b>Errors</b> stop a row from being used. Fix them in Excel and upload again.</li><li><b>Warnings</b> don’t block anything, but each one leaves a gap in the tree. For a first draft it’s fine to continue.</li><li>Open a warning to see the row numbers, so you can find them quickly in Excel.</li></ul>{% endcall %}
+  <div class="stats">
+    <div class="stat"><b>{{ d.total }}</b><span>rows read</span></div>
+    <div class="stat ok"><b>{{ d.events|length }}</b><span>used in the tree</span></div>
+    <div class="stat warn"><b>{{ warn_rows }}</b><span>rows with warnings</span></div>
+    <div class="stat err"><b>{{ d.left_out|length }}</b><span>left out (errors)</span></div>
+  </div>
+  <div class="issues">
+  {% for g in d.issues %}
+    <details class="issue {{ g.level }}"><summary><strong>{{ g.title }}</strong><span class="cnt">{{ g.rows|length }} row{{ 's' if g.rows|length != 1 }}</span><span class="fix">{% if g.level == 'error' %}Error, row left out. {% endif %}{{ g.fix }}</span></summary>
+    <ul class="rowlist">{% for r in g.rows %}<li><span class="r">Row {{ r.row }}</span><span>{{ r.year if r.year is not none else '' }}</span><span>{{ r.label }}{% if r.areas %}, {{ r.areas }}{% endif %}</span></li>{% endfor %}</ul></details>
+  {% else %}
+    <div class="card card-body">No issues found. Every row is ready.</div>
+  {% endfor %}
+  </div>
+  <div class="btn-row">{% if d.events %}<a class="btn primary" href="{{ url_for('main.scores', tree_id=tree.id) }}">Continue to scoring</a>{% endif %}<a class="btn" href="{{ url_for('main.upload', tree_id=tree.id) }}">Upload a fixed file</a></div>
+{% endif %}
+{% endblock %}
