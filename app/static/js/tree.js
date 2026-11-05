@@ -185,6 +185,62 @@
     for(let i = s; ; i = (i + 1) % 12){ out.push(i); if(i === en || out.length === 12) break; }
     return out;
   }
+
+  /* ---------- seasonal calendar from tab 4 of the workbook, with its sources from tab 5 ---------- */
+  const CAT_KEYS = [["meteo", "met"], ["weather", "met"], ["climat", "met"], ["hydro", "hyd"], ["flood", "hyd"],
+    ["geo", "geo"], ["agri", "agr"], ["food", "agr"], ["livelihood", "agr"], ["societ", "soc"], ["energy", "soc"],
+    ["politic", "soc"], ["conflict", "soc"], ["bio", "bio"], ["health", "bio"], ["epidem", "bio"], ["environ", "env"],
+    ["tech", "tec"]];
+  function catColours(rows){
+    const map = {}, extra = ["x1", "x2", "x3", "x4"]; let n = 0;
+    rows.forEach(r => { const c = r.category || "Other"; if(map[c]) return;
+      const hit = CAT_KEYS.find(([k]) => c.toLowerCase().includes(k));
+      map[c] = `var(--cat-${hit ? hit[1] : extra[n++ % extra.length]})`; });
+    return map;
+  }
+  function seasonalSection(){
+    const S = T.seasonal || { rows: [], sources: [] };
+    if(!S.rows.length) return `<div class="season-empty"><b>No seasonal calendar yet.</b> Fill in tab 4 of the workbook (seasons, planting and harvest, heating season, disease seasons) and its sources in tab 5, then upload again to show it here.</div>`;
+    const col = catColours(S.rows), src = Object.fromEntries(S.sources.map(s => [s.no, s]));
+    const cats = [...new Set(S.rows.map(r => r.category || "Other"))];
+    const refs = r => r.sources.filter(n => src[n]).map(n => `<button type="button" class="srcref" data-row="${r.row}" data-no="${n}" title="${esc(src[n].title)}" aria-label="Source ${n}: ${esc(src[n].title)}">${n}</button>`).join("");
+    const groups = [...new Set(S.sources.map(s => s.group || "Sources"))];
+    return `<div class="season-head"><div><h3 class="cal-h" style="margin-top:0">Seasonal calendar</h3>
+        <p class="cal-note">From tab 4 of the workbook: when each season, risk or activity usually happens. Numbers next to a row are its sources.</p></div>
+        <div class="season-key" aria-label="Key">${cats.map(c => `<span><i style="background:${col[c]}"></i>${esc(c)}</span>`).join("")}</div></div>
+      <div class="otab-wrap"><table class="season">
+        <thead><tr><th>Event / season</th>${MON.map((m, i) => `<th class="${i === T.thisMonth ? "now" : ""}"${i === T.thisMonth ? ' title="This month"' : ""}>${m}</th>`).join("")}</tr></thead>
+        <tbody>${S.rows.map(r => `<tr><th scope="row"><span class="s-label">${esc(r.label)}</span>${refs(r)}${r.notes ? `<span class="s-note">${esc(r.notes)}</span>` : ""}</th>${MON.map((m, i) => `<td class="${i === T.thisMonth ? "now" : ""}">${r.months.includes(i) ? `<span class="s-on" style="background:${col[r.category || "Other"]}" title="${esc(r.label)}: ${m}"></span>` : ""}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table></div>
+      <div class="src-pop" id="srcPop" role="dialog" aria-label="Sources" hidden></div>
+      ${S.sources.length ? `<details class="src-list" id="srcList"><summary>All sources (${S.sources.length})</summary>
+        ${groups.map(g => `<h4>${esc(g)}</h4><ol>${S.sources.filter(s => (s.group || "Sources") === g).map(s => `<li id="src-${s.no}" value="${s.no}">${esc(s.title)}${s.links.map((l, k) => ` <a href="${esc(l)}" target="_blank" rel="noopener">${s.links.length > 1 ? `link ${k + 1}` : "link"}</a>`).join("")}</li>`).join("")}</ol>`).join("")}
+      </details>` : ""}`;
+  }
+  function wireSeasonal(){
+    const pop = $("#srcPop");
+    if(!pop) return;
+    const S = T.seasonal, src = Object.fromEntries(S.sources.map(s => [s.no, s]));
+    const close = () => { pop.hidden = true; document.querySelectorAll(".srcref[aria-expanded]").forEach(b => b.removeAttribute("aria-expanded")); };
+    host.querySelectorAll(".srcref").forEach(b => b.onclick = ev => {
+      ev.stopPropagation();
+      const row = S.rows.find(r => String(r.row) === b.dataset.row), open = b.getAttribute("aria-expanded") === "true";
+      close();
+      if(open) return;
+      const items = row.sources.filter(n => src[n]).map(n => src[n]);
+      pop.innerHTML = `<p class="pop-title">${esc(row.label)}</p><ol>${items.map(s => `<li value="${s.no}" class="${String(s.no) === b.dataset.no ? "hit" : ""}">${esc(s.title)}${s.links.map((l, k) => `<br><a href="${esc(l)}" target="_blank" rel="noopener">${esc(l.replace(/^https?:\/\/(www\.)?/, "").split("/")[0])}${s.links.length > 1 ? ` (${k + 1})` : ""}</a>`).join("")}</li>`).join("")}</ol><button type="button" class="act" id="popAll">See all sources</button>`;
+      const box = host.querySelector(".season").closest(".card-body") || host, r = b.getBoundingClientRect(), base = box.getBoundingClientRect();
+      pop.hidden = false;
+      pop.style.top = (r.bottom - base.top + 6) + "px";
+      pop.style.left = Math.max(8, Math.min(r.left - base.left, base.width - pop.offsetWidth - 8)) + "px";
+      b.setAttribute("aria-expanded", "true");
+      $("#popAll").onclick = () => { close(); const d = $("#srcList"); d.open = true; d.scrollIntoView({behavior:"smooth", block:"start"}); };
+      pop.querySelector("a")?.focus();
+      setTimeout(() => document.addEventListener("click", close, { once: true }), 0);
+    });
+    pop.onclick = ev => ev.stopPropagation();
+    document.onkeydown = ev => { if(ev.key === "Escape" && !pop.hidden){ close(); } };
+  }
   function drawCal(){
     const area = st.cArea || "";
     const inArea = e => !area || split(e.areas).includes(area) || split(e.areas).includes("National");
@@ -239,8 +295,9 @@
     }
     const list = l => `<ul class="evlist">${[...l].sort((a, b) => b.year - a.year).map(e => evLine(e).replace("</b>", `</b> <span class="multi">${esc(e.start || "")}${e.end && e.end !== e.start ? "–" + esc(e.end) : ""}${split(e.areas).length ? " · " + esc(split(e.areas).slice(0, 3).join(", ")) + (split(e.areas).length > 3 ? "…" : "") : ""}</span>`)).join("")}</ul>`;
 
-    host.innerHTML = `<div class="map-grid"><section class="card">
-      <div class="card-head"><h2>Calendar</h2><p>${esc(label)}${area ? `, ${esc(area)}` : ""}: ${plural(ev.length, "event")}.</p></div>
+    host.innerHTML = `<section class="card season-card"><div class="card-body" style="position:relative">${seasonalSection()}</div></section>
+      <div class="map-grid"><section class="card">
+      <div class="card-head"><h2>Recorded events</h2><p>${esc(label)}${area ? `, ${esc(area)}` : ""}: ${plural(ev.length, "event")}, by year and by month.</p></div>
       <div class="card-body">
         <div class="cal-filters"><label for="calArea">${esc(Area)}</label><select id="calArea"><option value="">All ${esc(areaWord)}s</option>${T.areas.map(a => `<option ${a === area ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>
           ${area ? `<span class="muted">Nationwide events are included.</span>` : ""}</div>
@@ -259,6 +316,7 @@
     </div>`;
     host.querySelectorAll(".slice[data-t]").forEach(b => b.onclick = () => { st.mType = b.dataset.t; st.mSub = "all"; st.cSel = null; drawCal(); host.querySelector(`.slice[data-t="${CSS.escape(st.mType)}"]`)?.focus(); });
     host.querySelectorAll(".slice[data-s]").forEach(b => b.onclick = () => { st.mSub = b.dataset.s; st.cSel = null; drawCal(); host.querySelector(`.slice[data-s="${CSS.escape(st.mSub)}"]`)?.focus(); });
+    wireSeasonal();
     $("#calArea").onchange = e => { st.cArea = e.target.value; st.cSel = null; drawCal(); $("#calArea").focus(); };
     host.querySelectorAll(".calc").forEach(b => b.onclick = () => {
       const k = { kind: b.dataset.kind, row: b.dataset.row, col: b.dataset.col };

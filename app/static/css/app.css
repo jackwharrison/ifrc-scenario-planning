@@ -4,6 +4,7 @@
   --warn:#8A4F00; --warn-bg:#FCF0DA; --err:#B3141F; --err-bg:#FDE5E6; --ok:#21714A; --ok-bg:#E1F2E8;
   --r1-bg:#D3EEDC; --r1:#14532D; --r2-bg:#E6F2BD; --r2:#3D5210; --r3-bg:#FFE38F; --r3:#5C4300; --r4-bg:#F9A866; --r4:#4A1F00; --r5-bg:#C8102E; --r5:#FFFFFF;
   --needs:#E08A00; --on-needs:#2B1A00; --needs-bg:#FFF4DC;
+  --cat-met:#9BC2E6; --cat-hyd:#2E75B6; --cat-agr:#A9D08E; --cat-soc:#CCA3E0; --cat-bio:#F4A3A3; --cat-geo:#A69462; --cat-env:#5FB3A8; --cat-tec:#A6A6A6; --cat-x1:#E8B04B; --cat-x2:#7FA7D9; --cat-x3:#D98AB3; --cat-x4:#8FBF6A;
   --c-priorities:#F5333F; --c-conditions:#C0672A; --c-impact:#7A5BA6; --c-shock:#1E6091; --c-context:#011E41;
   --on-c:#FFFFFF;
   color-scheme:light;
@@ -15,6 +16,7 @@
     --warn:#F2B865; --warn-bg:#3A2A10; --err:#FF8A8F; --err-bg:#3E1518; --ok:#7CCB9C; --ok-bg:#15301F;
     --r1-bg:#1D4A30; --r1:#BDEBCB; --r2-bg:#3A4716; --r2:#E1F0A8; --r3-bg:#5A4510; --r3:#FFE08A; --r4-bg:#6E3511; --r4:#FFC9A0; --r5-bg:#C8102E; --r5:#FFFFFF;
     --needs:#F2B865; --on-needs:#2B1A00; --needs-bg:#33260F;
+    --cat-met:#6E9CC8; --cat-hyd:#4C8FD1; --cat-agr:#7FAE63; --cat-soc:#A97CC2; --cat-bio:#D17C7C; --cat-geo:#8C7B4C; --cat-env:#3F9488; --cat-tec:#7D7D7D; --cat-x1:#C4902F; --cat-x2:#5E86B8; --cat-x3:#B86B93; --cat-x4:#6E9E4C;
     --c-priorities:#F5535D; --c-conditions:#E3925A; --c-impact:#AC93D6; --c-shock:#6FA9D6; --c-context:#8FA6C8;
     --on-c:#141416;
     color-scheme:dark;
@@ -26,6 +28,7 @@
   --warn:#F2B865; --warn-bg:#3A2A10; --err:#FF8A8F; --err-bg:#3E1518; --ok:#7CCB9C; --ok-bg:#15301F;
   --r1-bg:#1D4A30; --r1:#BDEBCB; --r2-bg:#3A4716; --r2:#E1F0A8; --r3-bg:#5A4510; --r3:#FFE08A; --r4-bg:#6E3511; --r4:#FFC9A0; --r5-bg:#C8102E; --r5:#FFFFFF;
   --needs:#F2B865; --on-needs:#2B1A00; --needs-bg:#33260F;
+  --cat-met:#6E9CC8; --cat-hyd:#4C8FD1; --cat-agr:#7FAE63; --cat-soc:#A97CC2; --cat-bio:#D17C7C; --cat-geo:#8C7B4C; --cat-env:#3F9488; --cat-tec:#7D7D7D; --cat-x1:#C4902F; --cat-x2:#5E86B8; --cat-x3:#B86B93; --cat-x4:#6E9E4C;
   --c-priorities:#F5535D; --c-conditions:#E3925A; --c-impact:#AC93D6; --c-shock:#6FA9D6; --c-context:#8FA6C8;
   --on-c:#141416;
   color-scheme:dark;
@@ -191,7 +194,7 @@ details.issue summary .cnt{font-weight:700;color:var(--warn);white-space:nowrap}
 details.issue.error summary .cnt{color:var(--err)}
 details.issue summary .fix{grid-column:1 / -1;font-size:.86rem;color:var(--muted)}
 .rowlist{list-style:none;margin:0;padding:0 14px 12px}
-.rowlist li{display:grid;grid-template-columns:70px 60px 1fr;gap:10px;font-size:.86rem;padding:5px 0;border-top:1px solid var(--soft)}
+.rowlist li{display:grid;grid-template-columns:minmax(70px,auto) 60px 1fr;gap:10px;font-size:.86rem;padding:5px 0;border-top:1px solid var(--soft)}
 .rowlist .r{color:var(--muted)}
 .notice{border-radius:8px;padding:16px 18px;background:var(--warn-bg);color:var(--ink)}
 .notice h2{font-size:1.05rem;color:var(--warn);margin-bottom:6px}
@@ -397,3 +400,40 @@ a.act{text-decoration:none;display:inline-block}
 .otab.cal tr.caltotal th,.otab.cal tr.caltotal td{border-top:2px solid var(--line)}
 .calc{display:block;width:100%;height:100%;min-height:28px;border:0;background:none;color:inherit;font:inherit;font-weight:700;font-size:.82rem;cursor:pointer;padding:0}
 .otab.cal td.sel{outline:3px solid var(--ink);outline-offset:-3px}
+
+/* Seasonal calendar from tab 4: colour-coded months, sources as small numbered buttons with a popover */
+.season-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;align-items:flex-start}
+.season-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.82rem;max-width:420px}
+.season-key span{display:inline-flex;align-items:center;gap:6px}
+.season-key i{width:16px;height:12px;border-radius:2px;display:inline-block}
+table.season{border-collapse:separate;border-spacing:0;width:100%;margin-top:8px;font-size:.86rem}
+table.season th,table.season td{border-bottom:1px solid var(--soft)}
+table.season thead th{font-size:.78rem;color:var(--muted);text-align:center;padding:6px 2px;font-weight:700}
+table.season thead th:first-child{text-align:left;padding-left:8px}
+table.season thead th.now{color:var(--ink);box-shadow:inset 0 -3px 0 var(--red)}
+table.season th[scope="row"]{text-align:left;font-weight:600;padding:5px 8px;min-width:220px;white-space:normal;color:var(--ink)}
+table.season td{padding:3px 1px;width:6.2%;min-width:30px}
+table.season td.now{background:color-mix(in srgb,var(--red) 6%,transparent)}
+.s-on{display:block;height:18px;border-radius:3px}
+.s-note{display:block;font-weight:400;font-size:.78rem;color:var(--muted);margin-top:1px}
+.srcref{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 4px;margin-left:4px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:.68rem;font-weight:700;cursor:pointer;vertical-align:2px}
+.srcref:hover,.srcref[aria-expanded="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.src-pop{position:absolute;z-index:6;width:min(380px,calc(100% - 16px));background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:12px 14px;font-size:.85rem}
+.src-pop .pop-title{font-weight:700;margin-bottom:6px}
+.src-pop ol{margin:0 0 10px;padding-left:22px}
+.src-pop li{margin-bottom:6px}
+.src-pop li.hit{font-weight:600}
+.src-pop a,.src-list a{color:var(--ink);text-underline-offset:3px;font-weight:600}
+.src-list{margin-top:12px;font-size:.85rem}
+.src-list summary{cursor:pointer;font-weight:700;color:var(--muted)}
+.src-list h4{font-size:.85rem;margin:12px 0 4px}
+.src-list ol{margin:0;padding-left:24px}
+.src-list li{margin-bottom:4px}
+.src-list li:target{background:var(--needs-bg)}
+.season-empty{border:1px dashed var(--line);border-radius:8px;padding:12px 14px;font-size:.88rem;color:var(--muted)}
+.cal-rule{border:0;border-top:1px solid var(--line);margin:22px 0 16px}
+
+.season-card{margin-bottom:20px}
+table.season th[scope="row"]{position:sticky;left:0;z-index:1;background:var(--surface)}
+table.season thead th:first-child{position:sticky;left:0;z-index:1;background:var(--surface)}
+@media (max-width:720px){table.season th[scope="row"]{min-width:150px;font-size:.8rem}table.season td{min-width:26px}}

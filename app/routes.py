@@ -1,4 +1,5 @@
 """Pages: start, upload, check, score, tree (with the by-area table) and export."""
+import datetime
 import io
 import os
 import re
@@ -10,7 +11,7 @@ from . import current_user, lists, storage
 from .export.pdf import build_pdf
 from .export.word import build_docx
 from .tree.rules import BANDS, HIGH_RISK, apply_edits, build_tree, hazards_present, risk_band
-from .workbook.checks import check_events, effective_lists
+from .workbook.checks import check_events, check_seasonal, effective_lists
 from .workbook.columns import MONTHS, split_list
 from .workbook.reader import read_workbook
 from .workbook.template import build_template
@@ -159,7 +160,8 @@ def upload(tree_id):
 def _process(tree, filename, content):
     result = read_workbook(content, tree["setup"]["area_column"])
     data = tree["data"]
-    for key in ("events", "left_out", "issues", "total", "problem", "areas", "area_source", "factor_contexts"):
+    for key in ("events", "left_out", "issues", "total", "problem", "areas", "area_source", "factor_contexts",
+                "seasonal"):
         data.pop(key, None)
     data["file"] = filename
     if result.problem:
@@ -182,7 +184,10 @@ def _process(tree, filename, content):
         data.update(events=used, left_out=[e["_row"] for e in left_out], issues=issues, total=len(result.events),
                     areas=areas, area_source=source,
                     # which Context box each underlying factor goes in, including factors added in tab Lists
-                    factor_contexts=effective_lists(result.lists)["factors"])
+                    factor_contexts=effective_lists(result.lists)["factors"],
+                    # tabs 4 and 5: the seasonal calendar and its sources
+                    seasonal=result.seasonal)
+        data["issues"] += check_seasonal(result.seasonal)
     storage.add_upload(tree["id"], filename, current_user(), content)
     storage.save_data(tree["id"], data)
 
@@ -212,7 +217,8 @@ def use_example(tree_id):
 def check(tree_id):
     tree = load(tree_id)
     d = tree["data"]
-    warn_rows = {r["row"] for g in d.get("issues", []) if g["level"] == "warning" for r in g["rows"]}
+    warn_rows = {r["row"] for g in d.get("issues", []) if g["level"] == "warning" and not g["key"].startswith("cal_")
+                 for r in g["rows"]}
     areas, source = area_list(tree)
     label = tree["setup"]["area_label"]
     return page("check.html", tree, 2, warn_rows=len(warn_rows), areas=areas, area_source=source,
@@ -256,6 +262,8 @@ def tree_payload(tree):
                                           "displaced", "houses")} for e in events],
         "areas": area_list(tree)[0],
         "cities": [a["name"] for a in tree["setup"].get("areas", []) if a.get("city")],
+        "seasonal": tree["data"].get("seasonal") or {"rows": [], "sources": []},
+        "thisMonth": datetime.date.today().month - 1,
         "areaLabel": tree["setup"].get("area_label", "area"),
         "months": MONTHS,
         "editUrl": url_for("main.edit", tree_id=tree["id"]),
@@ -317,7 +325,8 @@ def export(tree_id):
                  and (d.get("scores", {}).get(h["key"]) or {}).get("i"))
     manual_empty = [b["title"] for l in view["layers"] for b in l["boxes"] if b["kind"] == "manual" and not b["mine"]]
     unverified = sum(1 for e in d["events"] if str(e.get("verified", "")).lower() != "yes")
-    warn_rows = len({r["row"] for g in d.get("issues", []) if g["level"] == "warning" for r in g["rows"]})
+    warn_rows = len({r["row"] for g in d.get("issues", []) if g["level"] == "warning"
+                     and not g["key"].startswith("cal_") for r in g["rows"]})
     checks = [
         (scored == len(hazards), f"Risk scores: {scored} of {len(hazards)} hazards scored."),
         (not manual_empty, f"Boxes still to write: {', '.join(manual_empty)}." if manual_empty else "All analyst boxes have content."),

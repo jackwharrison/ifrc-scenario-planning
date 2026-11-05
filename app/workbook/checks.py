@@ -150,3 +150,26 @@ def check_events(events, country, areas=None, strict=True, subtypes=None, workbo
     left_out = [e for e in events if e["_row"] in error_rows]
     issues = sorted(groups.values(), key=lambda g: (g["level"] != "error", -len(g["rows"])))
     return used, left_out, issues
+
+
+def check_seasonal(seasonal):
+    """Warnings for tabs 4 and 5. Nothing here blocks the tree; the seasonal calendar is shown as written."""
+    groups = {}
+    known = {s["no"] for s in seasonal.get("sources", [])}
+
+    def add(key, title, fix, row):
+        g = groups.setdefault(key, {"key": key, "level": "warning", "title": title, "fix": fix, "rows": []})
+        g["rows"].append({"row": row["row"], "tab": "4", "year": None, "label": row["label"], "areas": ""})
+
+    for r in seasonal.get("rows", []):
+        if not r["months"]:
+            add("cal_months", "Seasonal calendar: no months marked",
+                "Put an x in the months this season covers (tab 4), or colour the cells.", r)
+        if [n for n in r["sources"] if n not in known]:
+            add("cal_sources", "Seasonal calendar: source number not in tab 5",
+                "Use the numbers from the No. column of tab 5, separated by semicolons.", r)
+        if not r["sources"]:
+            add("cal_nosource", "Seasonal calendar: no source",
+                "Add the numbers of one or more sources from tab 5, so readers can check the season.", r)
+    return list(groups.values())
+

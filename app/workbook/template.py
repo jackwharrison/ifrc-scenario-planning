@@ -12,7 +12,8 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 from .. import lists
-from .columns import CONTEXTS, LIST_HEADERS, MONTHS, REQUIRED, columns_for
+from .columns import (CALENDAR_CATEGORIES, CONTEXTS, LIST_HEADERS, LIST_HEADERS_CALENDAR, MONTHS, REQUIRED,
+                      SEASONAL_HEADERS, SOURCES_HEADERS, columns_for)
 
 WIDTHS = {"year": 8, "start": 10, "end": 10, "type": 15, "sub": 24, "areas": 26, "desc": 50, "impact": 45,
           "sectors": 28, "factors": 36, "factorNotes": 40, "mitigating": 40, "sources": 40, "verified": 9}
@@ -55,6 +56,16 @@ def build_template(country):
          (f"- {area_column}: type your first-level areas (provinces, regions, districts...) once, one per row, "
           "before filling in tab 3. If you leave it empty, the app uses the names typed in tab 3 and warns about "
           "spellings that look alike."), font),
+        ("", font),
+        ("Tab 4, Seasonal calendar (optional)", bold),
+        ("One row per season or recurring risk: winter, snowmelt floods, planting, harvest, transhumance, heating season, "
+         "measles season... Put an x in each month it covers (or colour the cells), pick a Category for its colour, and "
+         "give the numbers of its sources from tab 5. The app shows it as a colour-coded calendar on the Review tree "
+         "page, with the sources one click away.", font),
+        ("Tab 5, Sources (optional)", bold),
+        ("One row per source: a number, a group (for example Disaster seasons, Agriculture, Energy, Health), the title "
+         "and the link. Tab 4 refers to these numbers.", font),
+        ("", font),
         ("Killed, Injured, Affected, Displaced, Houses damaged: whole numbers. Leave empty if unknown; "
          "enter 0 only if the source says none.", font),
         ("Verified: Yes once figures are checked against a primary source.", font), ("", font),
@@ -96,6 +107,7 @@ def build_template(country):
         (LIST_HEADERS["factors"], [f for f, _ in factor_pairs], True),
         (LIST_HEADERS["factor_context"], [c for _, c in factor_pairs], True),
         ("Verified", ["Yes", "No"], False),
+        (LIST_HEADERS_CALENDAR, CALENDAR_CATEGORIES, True),
         (LIST_HEADERS["contexts"], list(CONTEXTS), False),
     ]
     col_of, size = {}, {}
@@ -133,6 +145,36 @@ def build_template(country):
     ctx_col = col_of[LIST_HEADERS["factor_context"]]
     dropdown(lst, f"{ctx_col}2:{ctx_col}{size[LIST_HEADERS['factor_context']] + 1}", ref(LIST_HEADERS["contexts"]),
              "Which Context heading this factor goes under")
+    # Tab 4: seasonal calendar
+    cal = wb.create_sheet("4. Seasonal calendar")
+    cal_head = [SEASONAL_HEADERS["label"], SEASONAL_HEADERS["category"]] + MONTHS + [SEASONAL_HEADERS["sources"],
+                                                                                   SEASONAL_HEADERS["notes"]]
+    cal.append(cal_head)
+    for j, head in enumerate(cal_head, 1):
+        c = cal.cell(row=1, column=j)
+        c.font = Font(name="Arial", size=10, bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor="011E41")
+        c.alignment = Alignment(horizontal="center" if head in MONTHS else "left", vertical="center", wrap_text=True)
+        cal.column_dimensions[get_column_letter(j)].width = 5 if head in MONTHS else (36 if j == 1 else 20)
+    cal.column_dimensions[get_column_letter(len(cal_head))].width = 50
+    cal.freeze_panes = "C2"
+    dropdown(cal, f"B2:B{SPARE * 2}", ref(LIST_HEADERS_CALENDAR), "Pick a category; it sets the colour")
+    dropdown(cal, f"C2:{get_column_letter(2 + 12)}{SPARE * 2}", '"x"', "x if the season covers this month")
+
+    # Tab 5: sources for the seasonal calendar
+    src = wb.create_sheet("5. Sources")
+    src_head = list(SOURCES_HEADERS.values())
+    src.append(src_head)
+    for j, (head, width) in enumerate(zip(src_head, (6, 22, 70, 60)), 1):
+        c = src.cell(row=1, column=j)
+        c.font = Font(name="Arial", size=10, bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor="011E41")
+        src.column_dimensions[get_column_letter(j)].width = width
+    for i in range(2, SPARE + 2):
+        src.cell(row=i, column=1, value=i - 1).font = font
+    src.freeze_panes = "A2"
+
+    wb.move_sheet("Lists", offset=len(wb.sheetnames) - 1 - wb.sheetnames.index("Lists"))
     for field in ("killed", "injured", "affected", "displaced", "houses"):
         dv = DataValidation(type="whole", operator="greaterThanOrEqual", formula1="0", allow_blank=True)
         dv.error = "Whole numbers only"

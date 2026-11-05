@@ -43,6 +43,17 @@ LIST_HEADERS = {
     "factor_context": "Factor goes under",
     "contexts": "Context headings",
 }
+# Tab 4, the seasonal calendar: one row per season or recurring risk, an x (or a coloured cell) in each month it
+# covers, a category for its colour, and the numbers of its sources in tab 5.
+SEASONAL_SHEET_HINT = "seasonal calendar"      # tab name must contain this text
+SOURCES_SHEET_HINT = "sources"
+SEASONAL_HEADERS = {"label": "Event / season", "category": "Category", "notes": "Notes",
+                    "sources": "Sources (numbers from tab 5)"}
+SOURCES_HEADERS = {"no": "No.", "group": "Group", "title": "Source", "link": "Link"}
+CALENDAR_CATEGORIES = ["Meteorological", "Hydrological", "Geohazards", "Agricultural", "Societal", "Biological",
+                       "Environmental", "Technological"]
+LIST_HEADERS_CALENDAR = "Calendar categories"
+
 # The Context boxes of the tree. Fixed, because each is a box in the layout.
 CONTEXTS = ("Political", "Economic", "Socio-cultural", "Security", "Environmental and physical")
 

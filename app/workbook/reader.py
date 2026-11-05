@@ -3,14 +3,17 @@ import io
 
 from openpyxl import load_workbook
 
-from .columns import CONTEXTS, HAZARD_SHEET_HINT, LIST_HEADERS, NUMBER_FIELDS, columns_for
+import re
+
+from .columns import (CONTEXTS, HAZARD_SHEET_HINT, LIST_HEADERS, MONTHS, NUMBER_FIELDS, SEASONAL_HEADERS,
+                      SEASONAL_SHEET_HINT, SOURCES_HEADERS, SOURCES_SHEET_HINT, columns_for)
 
 
 GENERIC_AREA_COLUMN = "Areas"
 
 
 class ReadResult:
-    def __init__(self, events=None, problem=None, areas=None, subtypes=None, lists=None):
+    def __init__(self, events=None, problem=None, areas=None, subtypes=None, lists=None, seasonal=None):
         self.events = events or []
         # problem is None when the file could be read, otherwise a dict describing why not
         self.problem = problem
@@ -20,6 +23,8 @@ class ReadResult:
         self.subtypes = subtypes or []
         # everything else in tab Lists: see read_lists()
         self.lists = lists or {}
+        # tabs 4 and 5: see read_seasonal()
+        self.seasonal = seasonal or {"rows": [], "sources": []}
 
 
 def _list_column(wb, header_name, skip=()):
@@ -79,6 +84,77 @@ def read_lists(wb):
         "factors": {f: contexts.get(c.lower(), "") for f, c in
                     _list_pairs(wb, LIST_HEADERS["factors"], LIST_HEADERS["factor_context"])},
     }
+
+
+def _marked(cell):
+    """A month counts as covered when it holds a value (x, 1, yes...) or is filled with a colour."""
+    v = cell.value
+    if v is not None and str(v).strip() and str(v).strip().lower() not in ("0", "no", "-", "false"):
+        return True
+    fill = getattr(cell, "fill", None)
+    if fill is None or fill.fill_type != "solid":
+        return False
+    colour = fill.fgColor
+    if colour.type == "rgb":
+        return str(colour.rgb or "").upper()[-6:] not in ("FFFFFF", "000000", "")
+    if colour.type == "theme":
+        return colour.theme not in (0,)      # theme 0 is the white background
+    return True
+
+
+def _sheet(wb, hint):
+    return next((n for n in wb.sheetnames if hint in n.lower()), None)
+
+
+def read_seasonal(wb):
+    """Tab 4 (seasonal calendar) and tab 5 (sources). Both are optional.
+
+    rows: [{label, category, months: [0-11], notes, sources: [numbers], row}]
+    sources: [{no, group, title, links: [url, ...]}]  (a Link cell may hold several links)
+    """
+    out = {"rows": [], "sources": []}
+    name = _sheet(wb, SOURCES_SHEET_HINT)
+    if name and SEASONAL_SHEET_HINT not in name.lower():
+        rows = list(wb[name].iter_rows(values_only=True))
+        hi = next((i for i, r in enumerate(rows[:10]) if SOURCES_HEADERS["title"] in [_clean_text(c) for c in r]), None)
+        if hi is not None:
+            head = [_clean_text(c) for c in rows[hi]]
+            col = {k: head.index(h) if h in head else None for k, h in SOURCES_HEADERS.items()}
+            get = lambda r, k: _clean_text(r[col[k]]) if col[k] is not None and col[k] < len(r) else ""
+            for r in rows[hi + 1:]:
+                title = get(r, "title")
+                if not title:
+                    continue
+                no = re.match(r"\d+", get(r, "no") or "")
+                out["sources"].append({"no": int(no.group()) if no else len(out["sources"]) + 1,
+                                       "group": get(r, "group"), "title": title,
+                                       "links": re.findall(r"https?://[^\s;,]+", get(r, "link"))})
+    name = _sheet(wb, SEASONAL_SHEET_HINT)
+    if not name:
+        return out
+    ws = wb[name]
+    rows = list(ws.iter_rows())
+    hi = next((i for i, r in enumerate(rows[:10]) if {"Jan", "Dec"} <= {_clean_text(c.value) for c in r}), None)
+    if hi is None:
+        return out
+    head = [_clean_text(c.value) for c in rows[hi]]
+    month_col = [head.index(m) for m in MONTHS]
+    find = lambda key, starts=False: next((j for j, h in enumerate(head)
+                                           if h == SEASONAL_HEADERS[key] or (starts and h.startswith(SEASONAL_HEADERS[key].split(" ")[0]))), None)
+    c_label = find("label")
+    if c_label is None:
+        c_label = 0
+    c_cat, c_notes, c_src = find("category"), find("notes"), find("sources", starts=True)
+    cell = lambda r, j: r[j] if j is not None and j < len(r) else None
+    text = lambda r, j: _clean_text(cell(r, j).value) if cell(r, j) is not None else ""
+    for i, r in enumerate(rows[hi + 1:], start=hi + 2):
+        label = text(r, c_label)
+        if not label:
+            continue
+        months = [m for m, j in enumerate(month_col) if cell(r, j) is not None and _marked(cell(r, j))]
+        out["rows"].append({"label": label, "category": text(r, c_cat), "months": months, "notes": text(r, c_notes),
+                            "sources": [int(x) for x in re.findall(r"\d+", text(r, c_src))], "row": i})
+    return out
 
 
 def _list_areas(wb, area_column):
@@ -156,4 +232,5 @@ def read_workbook(data, area_column):
                 event[field] = _clean_text(value)
         events.append(event)
     found = read_lists(wb)
-    return ReadResult(events=events, areas=_list_areas(wb, area_column), subtypes=list(found["subs"]), lists=found)
+    return ReadResult(events=events, areas=_list_areas(wb, area_column), subtypes=list(found["subs"]), lists=found,
+                      seasonal=read_seasonal(wb))

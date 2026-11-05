@@ -32,7 +32,7 @@
   <div class="issues">
   {% for g in d.issues %}
     <details class="issue {{ g.level }}"><summary><strong>{{ g.title }}</strong><span class="cnt">{{ g.rows|length }} row{{ 's' if g.rows|length != 1 }}</span><span class="fix">{% if g.level == 'error' %}Error, row left out. {% endif %}{{ g.fix }}</span></summary>
-    <ul class="rowlist">{% for r in g.rows %}<li><span class="r">Row {{ r.row }}</span><span>{{ r.year if r.year is not none else '' }}</span><span>{{ r.label }}{% if r.areas %}, {{ r.areas }}{% endif %}</span></li>{% endfor %}</ul></details>
+    <ul class="rowlist">{% for r in g.rows %}<li><span class="r">{% if r.tab %}Tab {{ r.tab }}, row{% else %}Row{% endif %} {{ r.row }}</span><span>{{ r.year if r.year is not none else '' }}</span><span>{{ r.label }}{% if r.areas %}, {{ r.areas }}{% endif %}</span></li>{% endfor %}</ul></details>
   {% else %}
     <div class="card card-body">No issues found. Every row is ready.</div>
   {% endfor %}
