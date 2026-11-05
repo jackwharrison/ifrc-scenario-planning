@@ -1,8 +1,9 @@
 {% extends "base.html" %}
-{% from "_macros.html" import help %}
+{% from "_macros.html" import help, workbook_line %}
 {% block content %}
 <div class="page-head"><h1>{{ tree.country }}, {{ tree.type.name|lower }}</h1>
-<p>Built from {{ tree.data.events|length }} events in {{ tree.data.file }}. Boxes marked Automatic are written from the counts; boxes marked Needs you are yours to write. Click a box to see how each line was worked out.</p></div>
+{{ workbook_line(tree, uploads, "Built from " ~ tree.data.events|length ~ " events in") }}
+<p>Boxes marked Automatic are written from the counts; boxes marked Needs you are yours to write. Click a box to see how each line was worked out.</p></div>
 {% call help("tree") %}<ul><li><b>Automatic</b> boxes are written from the counts. Open “Based on rows” to check any number against the workbook.</li><li><b>Needs you</b> boxes are yours to write: context, affected groups, expected consequences.</li><li>Your edits are kept when a new workbook is uploaded. An edited line keeps your wording even if its numbers change, so recheck edited lines after each upload.</li></ul>{% endcall %}
 <div class="viewtoggle" role="group" aria-label="View"><button type="button" data-v="tree" aria-pressed="true">Tree</button><button type="button" data-v="map" aria-pressed="false">By {{ tree.setup.area_label }}</button><button type="button" data-v="cal" aria-pressed="false">Calendar</button></div>
 <div id="view4"></div>

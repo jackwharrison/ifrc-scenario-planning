@@ -100,6 +100,27 @@ def add_upload(tree_id, filename, user, content):
     db().commit()
 
 
+def list_uploads(tree_id):
+    """Every workbook uploaded to a tree, newest first, without the file itself."""
+    return [dict(r) for r in db().execute(
+        "SELECT id, filename, uploaded_at, uploaded_by, length(content) AS size FROM uploads "
+        "WHERE tree_id = ? ORDER BY id DESC", (tree_id,)).fetchall()]
+
+
+def latest_uploads():
+    """{tree_id: newest upload} for the list of trees."""
+    rows = db().execute(
+        "SELECT u.id, u.tree_id, u.filename, u.uploaded_at, u.uploaded_by FROM uploads u "
+        "JOIN (SELECT tree_id, MAX(id) AS id FROM uploads GROUP BY tree_id) last ON last.id = u.id").fetchall()
+    return {r["tree_id"]: dict(r) for r in rows}
+
+
+def get_upload(tree_id, upload_id):
+    row = db().execute("SELECT filename, content FROM uploads WHERE tree_id = ? AND id = ?",
+                       (tree_id, upload_id)).fetchone()
+    return dict(row) if row else None
+
+
 def add_version(tree_id, user, snapshot):
     db().execute("INSERT INTO versions (tree_id, saved_at, saved_by, snapshot) VALUES (?,?,?,?)",
                  (tree_id, now(), user, json.dumps(snapshot)))

@@ -7,17 +7,17 @@
 <form method="post">
 <input type="hidden" name="csrf" value="{{ csrf_token }}">
 <section class="card"><div class="card-head"><h2>Hazards in the uploaded list</h2><p>{{ hazards|selectattr('r')|list|length }} of {{ hazards|length }} scored</p></div>
-<div class="score-wrap"><table><thead><tr><th>Hazard sub-type</th><th class="num">Events</th><th class="num">Most recent</th><th>Likelihood (1–5)</th><th>Impact (1–5)</th><th>Risk</th></tr></thead><tbody>
+<div class="score-wrap"><table class="scores"><thead><tr><th>Hazard sub-type</th><th class="num">Events</th><th class="num">Most recent</th><th>Likelihood (1–5)</th><th>Impact (1–5)</th><th>Risk</th></tr></thead><tbody>
 {% set ns = namespace(last='') %}
 {% for h in hazards %}
   {% if h.type != ns.last %}<tr class="typehead"><td colspan="6">{{ h.type }}</td></tr>{% set ns.last = h.type %}{% endif %}
-  <tr class="srow"><td>{{ h.sub }}</td><td class="num">{{ h.n }}</td><td class="num">{{ h.last }}</td>
+  <tr class="srow"><td class="sname">{{ h.sub }}</td><td class="num" data-label="Events">{{ h.n }}</td><td class="num" data-label="Most recent">{{ h.last }}</td>
   {% for f, label in [('l','Likelihood'),('i','Impact')] %}
-    <td><label class="sr-only" for="{{ f }}-{{ loop.index }}-{{ h.key }}">{{ label }} for {{ h.sub }}</label>
+    <td data-label="{{ label }}"><label class="sr-only" for="{{ f }}-{{ loop.index }}-{{ h.key }}">{{ label }} for {{ h.sub }}</label>
     <select id="{{ f }}-{{ loop.index }}-{{ h.key }}" name="{{ f }}::{{ h.key }}"><option value="">–</option>{% for n in range(1,6) %}<option {{ 'selected' if h[f] == n }}>{{ n }}</option>{% endfor %}</select></td>
   {% endfor %}
   {% set b = {'Not scored':0,'Very low':1,'Low':2,'Medium':3,'High':4,'Very high':5}[h.band] %}
-  <td><span class="band b{{ b }}">{% if h.r %}{{ h.r }}, {% endif %}{{ h.band }}</span></td></tr>
+  <td class="sband"><span class="band b{{ b }}">{% if h.r %}{{ h.r }}, {% endif %}{{ h.band }}</span></td></tr>
 {% endfor %}
 </tbody></table></div></section>
 <div class="band-key" aria-label="Risk bands">Risk bands:

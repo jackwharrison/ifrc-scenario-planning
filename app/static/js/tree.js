@@ -210,7 +210,7 @@
         <div class="season-key" aria-label="Key">${cats.map(c => `<span><i style="background:${col[c]}"></i>${esc(c)}</span>`).join("")}</div></div>
       <div class="otab-wrap"><table class="season">
         <thead><tr><th>Event / season</th>${MON.map((m, i) => `<th class="${i === T.thisMonth ? "now" : ""}"${i === T.thisMonth ? ' title="This month"' : ""}>${m}</th>`).join("")}</tr></thead>
-        <tbody>${S.rows.map(r => `<tr><th scope="row"><span class="s-label">${esc(r.label)}</span>${refs(r)}${r.notes ? `<span class="s-note">${esc(r.notes)}</span>` : ""}</th>${MON.map((m, i) => `<td class="${i === T.thisMonth ? "now" : ""}">${r.months.includes(i) ? `<span class="s-on" style="background:${col[r.category || "Other"]}" title="${esc(r.label)}: ${m}"></span>` : ""}</td>`).join("")}</tr>`).join("")}</tbody>
+        <tbody>${S.rows.map(r => `<tr><th scope="row"><span class="s-label">${esc(r.label)}</span>${refs(r)}${r.notes ? `<span class="s-note">${esc(r.notes)}</span>` : ""}</th>${MON.map((m, i) => `<td class="${i === T.thisMonth ? "now" : ""}" data-m="${m[0]}">${r.months.includes(i) ? `<span class="s-on" style="background:${col[r.category || "Other"]}" title="${esc(r.label)}: ${m}"></span>` : ""}</td>`).join("")}</tr>`).join("")}</tbody>
       </table></div>
       <div class="src-pop" id="srcPop" role="dialog" aria-label="Sources" hidden></div>
       ${S.sources.length ? `<details class="src-list" id="srcList"><summary>All sources (${S.sources.length})</summary>

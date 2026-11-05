@@ -1,3 +1,13 @@
+{% macro workbook_line(tree, uploads, label="Workbook") %}{% if uploads %}{% set u = uploads[0] %}
+<div class="wb-line"><span class="wb-label">{{ label }}</span>
+  <a class="wb-file" href="{{ url_for('main.download_upload', tree_id=tree.id, upload_id=u.id) }}" download title="Download the workbook as uploaded">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>{{ u.filename }}</span></a>
+  <span class="wb-meta">Uploaded {{ u.uploaded_at }}{% if u.uploaded_by %} by {{ u.uploaded_by }}{% endif %}</span>
+  {% if uploads|length > 1 %}<details class="wb-older"><summary>{{ uploads|length - 1 }} earlier upload{{ 's' if uploads|length > 2 }}</summary><ul>
+  {% for o in uploads[1:] %}<li><a href="{{ url_for('main.download_upload', tree_id=tree.id, upload_id=o.id) }}" download>{{ o.filename }}</a> <span class="wb-meta">{{ o.uploaded_at }}{% if o.uploaded_by %}, {{ o.uploaded_by }}{% endif %}</span></li>{% endfor %}
+  </ul></details>{% endif %}
+</div>{% endif %}{% endmacro %}
+
 {% macro help(key) %}
 <details class="help" data-help="{{ key }}" open><summary>What to do here</summary><div class="help-body">{{ caller() }}</div></details>
 {% endmacro %}

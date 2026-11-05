@@ -79,8 +79,9 @@ def reached(tree):
 
 
 def page(template, tree=None, step=None, **kw):
+    uploads = storage.list_uploads(tree["id"]) if tree else []
     return render_template(template, tree=tree, step=step, steps=STEPS,
-                           reached=reached(tree) if tree else 0, **kw)
+                           reached=reached(tree) if tree else 0, uploads=uploads, **kw)
 
 
 def view_for(tree):
@@ -96,7 +97,17 @@ def view_for(tree):
 
 @bp.get("/")
 def home():
-    return page("home.html", trees=storage.list_trees())
+    return page("home.html", trees=storage.list_trees(), latest=storage.latest_uploads())
+
+
+@bp.get("/trees/<int:tree_id>/uploads/<int:upload_id>")
+def download_upload(tree_id, upload_id):
+    """Download a workbook exactly as it was uploaded, so others can see what a tree was built from."""
+    up = storage.get_upload(tree_id, upload_id)
+    if not up:
+        abort(404)
+    return send_file(io.BytesIO(up["content"]), as_attachment=True, download_name=up["filename"],
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @bp.get("/start")

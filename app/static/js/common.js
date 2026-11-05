@@ -19,3 +19,8 @@ async function postJSON(url, body){
     d.addEventListener("toggle", () => { closed[d.dataset.help] = !d.open; try { localStorage.setItem("ptHelpClosed", JSON.stringify(closed)); } catch(e) {} });
   });
 })();
+
+(function stepIntoView(){
+  const cur = document.querySelector(".steps [aria-current]");
+  if(cur && cur.scrollIntoView && window.matchMedia("(max-width:720px)").matches) cur.scrollIntoView({block:"nearest", inline:"center"});
+})();

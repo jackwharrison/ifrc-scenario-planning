@@ -437,3 +437,55 @@ table.season td.now{background:color-mix(in srgb,var(--red) 6%,transparent)}
 table.season th[scope="row"]{position:sticky;left:0;z-index:1;background:var(--surface)}
 table.season thead th:first-child{position:sticky;left:0;z-index:1;background:var(--surface)}
 @media (max-width:720px){table.season th[scope="row"]{min-width:150px;font-size:.8rem}table.season td{min-width:26px}}
+
+/* Uploaded workbook: name, download link, who uploaded it */
+.page-head h1,.page-head p{overflow-wrap:anywhere}
+.wb-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0 0 14px;font-size:.9rem;min-width:0}
+.wb-label{color:var(--muted)}
+.wb-file{display:inline-flex;align-items:center;gap:6px;font-weight:600;min-width:0;max-width:100%;overflow-wrap:anywhere;text-decoration:none}
+.wb-file svg{flex:none}
+.wb-file span{text-decoration:underline;text-underline-offset:2px;min-width:0}
+.wb-meta{color:var(--muted);font-size:.82rem}
+.wb-older{flex-basis:100%;font-size:.85rem}
+.wb-older summary{cursor:pointer;color:var(--muted)}
+.wb-older ul{margin:6px 0 0;padding-left:18px}
+.wb-older li{margin:3px 0;overflow-wrap:anywhere}
+.wb-cell{max-width:280px}
+.wb-cell .wb-meta{display:block}
+.export-wrap{display:flex;flex-direction:column}
+@media (max-width:720px){
+  /* Scores as cards */
+  table.scores thead{display:none}
+  table.scores,table.scores tbody{display:block}
+  table.scores tr.typehead,table.scores tr.typehead td{display:block}
+  table.scores tr.srow{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  table.scores tr.srow td{display:block;border:0;padding:0;text-align:left}
+  table.scores td.sname{grid-column:1/-1;font-weight:600}
+  table.scores td.sband{grid-column:1/-1}
+  table.scores td[data-label]::before,table.trees td[data-label]::before{content:attr(data-label);display:block;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
+  table.scores select{width:100%}
+  /* Home list as cards */
+  table.trees thead{display:none}
+  table.trees,table.trees tbody{display:block}
+  table.trees tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  table.trees td{display:block;border:0;padding:0;text-align:left;max-width:none}
+  table.trees td[data-label="Country"],table.trees td.wb-cell{grid-column:1/-1}
+  table.trees td[data-label="Country"]::before{display:none}
+  table.trees .tname{font-size:1.05rem;font-weight:600}
+  /* Seasonal calendar: label on its own line, then a strip of 12 months */
+  .otab-wrap:has(table.season){overflow:visible}
+  table.season,table.season tbody{display:block;width:100%}
+  table.season thead{display:none}
+  table.season tr{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;padding:10px 0;border-bottom:1px solid var(--line)}
+  table.season th[scope="row"]{grid-column:1/-1;position:static;min-width:0;font-size:.88rem;text-align:left;padding:0 0 6px;border:0;background:none}
+  table.season td{width:auto;min-width:0;padding:0;border:0;text-align:center;height:auto}
+  table.season td::before{content:attr(data-m);display:block;font-size:.66rem;color:var(--muted);line-height:1.4}
+  table.season td.now::before{color:var(--ink);font-weight:700}
+  table.season td .s-on{display:block;height:14px;width:100%;border-radius:3px}
+  table.season td:not(:has(.s-on))::after{content:"";display:block;height:14px;border-radius:3px;background:var(--line);opacity:.45}
+  .season-key{flex-wrap:wrap}
+  /* Export: download controls before the long preview */
+  .export-wrap .export-grid{order:-1;margin-top:0!important;margin-bottom:20px}
+  /* Event tables: keep the row name in view while scrolling sideways */
+  .otab th[scope="row"]{position:sticky;left:0;z-index:1;background:var(--surface)}
+}

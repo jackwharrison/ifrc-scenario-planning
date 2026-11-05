@@ -15,6 +15,10 @@ The app counts what can be counted and shows how it did it. Everything that need
 
 Uploading a newer workbook keeps the scores, edited wording and hand-written lines.
 
+Every uploaded workbook is kept as it was uploaded. Anyone who can open the app can download it from the home page (latest file per tree) or from the Check, Review tree and Export pages (latest file, with earlier uploads listed under it), so teams can see exactly what a tree was built from.
+
+The app works on phones: tables turn into cards, the seasonal calendar shows each row with a strip of 12 months under it, and on the Export page the download options come before the preview.
+
 ## What is in this repository
 
 ```

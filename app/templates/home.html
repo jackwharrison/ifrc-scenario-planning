@@ -9,10 +9,11 @@
     <thead><tr><th>Country</th><th>Workbook</th><th class="num">Events</th><th>Last updated</th><th>Created by</th></tr></thead>
     <tbody>
     {% for t in trees %}
-      <tr><td><a href="{{ url_for('main.tree' if t.data.get('events') else 'main.upload', tree_id=t.id) }}">{{ t.country }}</a></td>
-      <td>{{ t.data.get('file', 'Not uploaded yet') }}</td>
-      <td class="num">{{ t.data.get('events', [])|length }}</td>
-      <td>{{ t.updated_at }}</td><td>{{ t.created_by or '' }}</td></tr>
+      {% set u = latest.get(t.id) %}
+      <tr><td data-label="Country"><a class="tname" href="{{ url_for('main.tree' if t.data.get('events') else 'main.upload', tree_id=t.id) }}">{{ t.country }}</a></td>
+      <td data-label="Workbook" class="wb-cell">{% if u %}<a class="wb-file" href="{{ url_for('main.download_upload', tree_id=t.id, upload_id=u.id) }}" download title="Download the workbook as uploaded"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>{{ u.filename }}</span></a>{% if u.uploaded_by %}<span class="wb-meta">by {{ u.uploaded_by }}</span>{% endif %}{% else %}<span class="muted">Not uploaded yet</span>{% endif %}</td>
+      <td data-label="Events" class="num">{{ t.data.get('events', [])|length }}</td>
+      <td data-label="Updated">{{ t.updated_at }}</td><td data-label="Created by">{{ t.created_by or '' }}</td></tr>
     {% endfor %}
     </tbody></table></div>
   {% else %}

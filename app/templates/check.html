@@ -1,8 +1,9 @@
 {% extends "base.html" %}
-{% from "_macros.html" import help %}
+{% from "_macros.html" import help, workbook_line %}
 {% block content %}
 {% set d = tree.data %}
-<div class="page-head"><h1>Check: {{ d.file }}</h1>
+<div class="page-head"><h1>Check the workbook</h1>
+{{ workbook_line(tree, uploads) }}
 {% if not d.problem %}<p>{{ d.total }} rows read from tab 3. Rows with errors are left out of the tree. Warnings don’t block anything, but each one makes part of the tree thinner.</p>{% endif %}</div>
 {% if d.problem %}
   {% set p = d.problem %}

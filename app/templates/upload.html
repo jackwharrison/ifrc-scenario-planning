@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import help %}
+{% from "_macros.html" import help, workbook_line %}
 {% block content %}
 <div class="page-head"><h1>Upload the completed hazard list</h1>
 <p>Staff fill in the standardised workbook. The app reads tab 3, checks every row, and builds the parts of the problem tree that can be counted. The rest stays with you.</p></div>
@@ -35,6 +35,9 @@
     <li>Figures you couldn’t check are marked Verified: No.</li>
   </ul>
   <div class="btn-row" style="margin-top:8px"><a class="btn" href="{{ url_for('main.template', country=tree.country) }}">Get the blank template</a></div>
-</div></section></div>
+</div></section>
+{% if uploads %}<section class="card" style="grid-column:1 / -1"><div class="card-head"><h2>Uploaded so far</h2><p>Download any of them to see exactly what this tree was built from. Start from the latest to make changes.</p></div>
+<div class="card-body">{{ workbook_line(tree, uploads, "Latest") }}</div></section>{% endif %}
+</div>
 {% endblock %}
 {% block scripts %}<script src="{{ url_for('static', filename='js/upload.js') }}"></script>{% endblock %}

@@ -72,6 +72,30 @@ class AppFlowTests(unittest.TestCase):
         self.assertTrue(r.headers["Location"].endswith("/upload"))
         self.assertIn('value="municipality"', self.client.get(tree_url + "/start").get_data(as_text=True))
 
+    def test_uploaded_workbook_can_be_downloaded(self):
+        trees = []
+        for country in ("Kyrgyzstan", "Lithuania"):
+            r = self.client.post("/start", data={"csrf": self.csrf, "country": country})
+            trees.append(r.headers["Location"].rsplit("/", 1)[0])
+        data = example_bytes()
+        for name in ("first.xlsx", "Hazard list with a very long name, final v2.xlsx"):
+            self.client.post(trees[0] + "/upload", data={"csrf": self.csrf, "workbook": (io.BytesIO(data), name)},
+                             content_type="multipart/form-data")
+        page = self.client.get(trees[0] + "/check").get_data(as_text=True)
+        links = re.findall(r'href="(/trees/\d+/uploads/(\d+))"', page)
+        self.assertEqual(len({l for l, _ in links}), 2)  # newest plus one earlier upload
+        self.assertIn("final v2.xlsx", page)
+        newest = links[0][0]
+        r = self.client.get(newest)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data, data)
+        self.assertIn("final v2.xlsx", r.headers["Content-Disposition"])
+        # The home page links the latest workbook of each tree
+        self.assertIn(newest, self.client.get("/").get_data(as_text=True))
+        # An upload can only be fetched through its own tree
+        other = trees[1] + "/uploads/" + links[0][1]
+        self.assertEqual(self.client.get(other).status_code, 404)
+
     def test_post_without_token_is_refused(self):
         r = self.client.post("/start", data={"country": "Kyrgyzstan"})
         self.assertEqual(r.status_code, 400)
