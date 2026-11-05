@@ -33,6 +33,19 @@ MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "
 
 HAZARD_SHEET_HINT = "hazard list"   # tab name must contain this text
 
+# Headers in tab Lists. The reader finds each list by header, so the order of columns does not matter.
+LIST_HEADERS = {
+    "types": "Hazard types",
+    "subs": "Hazard sub-types",
+    "sub_type": "Sub-type belongs to",
+    "sectors": "Sectors",
+    "factors": "Underlying factors",
+    "factor_context": "Factor goes under",
+    "contexts": "Context headings",
+}
+# The Context boxes of the tree. Fixed, because each is a box in the layout.
+CONTEXTS = ("Political", "Economic", "Socio-cultural", "Security", "Environmental and physical")
+
 
 def columns_for(area_column):
     return [(h if h else area_column, k) for h, k in COLUMNS]

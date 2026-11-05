@@ -154,11 +154,25 @@ The blank template for the country is generated from these lists, so its dropdow
 
 ## Changing the lists
 
-- `hazards.yaml`: hazard types and sub-types.
-- `sectors.yaml`: sectors that can be tagged.
-- `factors.yaml`: underlying factor tags, and which Context column each one goes into (Political, Economic, Socio-cultural, Security, or Environmental and physical).
+The app builds off the spreadsheet. Tab Lists of every uploaded workbook is read back, so National Societies change the lists there, not in the code:
 
-After changing a list, download a fresh template. Old workbooks with tags that are no longer on the list will show a warning, not an error.
+| In tab Lists | What you can do | What the app does |
+|---|---|---|
+| Area column (Areas, Wilayas, Oblasts...) | List your first-level areas | Checks tab 3 against them and counts events per area |
+| Hazard types | Add a type | Accepts it and counts events under it in the tree |
+| Hazard sub-types + Sub-type belongs to | Add a sub-type and say which type it belongs to, or move one to another type | Accepts it; a sub-type under a type other than the one in tab Lists is an error |
+| Sectors | Add a sector | Accepts it as a tag |
+| Underlying factors + Factor goes under | Add a factor and pick its Context heading | Puts it in that Context box of the tree |
+
+Values typed in tab 3 that are in neither tab Lists nor the app's defaults are still used; they get a warning (with a "did you mean" suggestion) so typos are caught. Each editable list has 40 empty yellow rows, and the dropdowns in tab 3 include them.
+
+Two things stay fixed because they are the layout of the tree itself: the five Context headings (Political, Economic, Socio-cultural, Security, Environmental and physical) and the column headers of tab 3.
+
+The files in `app/lists/` are only the defaults that go into each new template:
+
+- `hazards.yaml`: hazard types and sub-types.
+- `sectors.yaml`: sectors.
+- `factors.yaml`: underlying factors and their Context heading.
 
 ## Data storage
 
@@ -171,7 +185,7 @@ Back up the database by downloading `/home/data/app.db` through the web app's "A
 ## Known limitations and next steps
 
 - **No geographic map**, on purpose: the area table works for every country from names alone. A map would need P-codes and boundary files per country.
-- **Built-in area lists** exist only for Kyrgyzstan. Pre-filling every country (names from OCHA or geoBoundaries) is a one-off data job; until then, National Societies list their areas in tab Lists.
+- **Built-in area lists** exist for Kyrgyzstan (oblasts) and Algeria (69 wilayas), each with an example workbook in `samples/`. Pre-filling every country (names from OCHA or geoBoundaries) is a one-off data job; until then, National Societies list their areas in tab Lists.
 - **The Kyrgyzstan example** was standardised by hand from the original hazard list. Some choices (which oblast, death tolls that include neighbouring countries) are judgement calls; check the figures before relying on them.
 - **The Word document** is built in code (`app/export/word.py`). If colleagues want to change the layout in Word themselves, it can be switched to a Word template filled with `docxtpl`.
 - **Fonts** load from Google Fonts. If your network blocks that, the app falls back to system fonts; you can also download the fonts into `app/static/`.

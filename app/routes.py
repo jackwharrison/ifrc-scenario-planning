@@ -10,7 +10,7 @@ from . import current_user, lists, storage
 from .export.pdf import build_pdf
 from .export.word import build_docx
 from .tree.rules import BANDS, HIGH_RISK, apply_edits, build_tree, hazards_present, risk_band
-from .workbook.checks import check_events
+from .workbook.checks import check_events, effective_lists
 from .workbook.columns import MONTHS, split_list
 from .workbook.reader import read_workbook
 from .workbook.template import build_template
@@ -84,7 +84,8 @@ def page(template, tree=None, step=None, **kw):
 
 def view_for(tree):
     d = tree["data"]
-    t = build_tree(d.get("events", []), d.get("scores", {}), tree["country"], tree["setup"]["area_label"])
+    t = build_tree(d.get("events", []), d.get("scores", {}), tree["country"], tree["setup"]["area_label"],
+                   d.get("factor_contexts"))
     if not t:
         return None
     return apply_edits(t, d.get("edits", {}), d.get("out", {}), d.get("manual", {}))
@@ -158,7 +159,7 @@ def upload(tree_id):
 def _process(tree, filename, content):
     result = read_workbook(content, tree["setup"]["area_column"])
     data = tree["data"]
-    for key in ("events", "left_out", "issues", "total", "problem", "areas", "area_source"):
+    for key in ("events", "left_out", "issues", "total", "problem", "areas", "area_source", "factor_contexts"):
         data.pop(key, None)
     data["file"] = filename
     if result.problem:
@@ -176,9 +177,12 @@ def _process(tree, filename, content):
             for e in result.events:
                 seen += [a for a in split_list(e.get("areas")) if a.lower() != "national" and a not in seen]
             areas, source = seen, "events"
-        used, left_out, issues = check_events(result.events, tree["country"], areas=areas, strict=source != "events")
+        used, left_out, issues = check_events(result.events, tree["country"], areas=areas, strict=source != "events",
+                                              workbook_lists=result.lists)
         data.update(events=used, left_out=[e["_row"] for e in left_out], issues=issues, total=len(result.events),
-                    areas=areas, area_source=source)
+                    areas=areas, area_source=source,
+                    # which Context box each underlying factor goes in, including factors added in tab Lists
+                    factor_contexts=effective_lists(result.lists)["factors"])
     storage.add_upload(tree["id"], filename, current_user(), content)
     storage.save_data(tree["id"], data)
 

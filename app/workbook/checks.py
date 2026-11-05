@@ -25,16 +25,44 @@ def similar_area_names(names):
     return groups
 
 
-def check_events(events, country, areas=None, strict=True):
+def effective_lists(workbook_lists=None):
+    """The app's default lists with the workbook's tab Lists laid over them. The workbook wins where both say
+    something (for example which hazard type a sub-type belongs to)."""
+    wl = workbook_lists or {}
+    taxonomy = lists.hazard_types()
+    types = list(taxonomy) + [t for t in wl.get("types", []) if t not in taxonomy]
+    sub_types = {}
+    for t, subs in taxonomy.items():
+        for s in subs:
+            sub_types.setdefault(s, set()).add(t)
+    for s, t in (wl.get("subs") or {}).items():
+        if t:
+            sub_types[s] = {t}          # the workbook says where this sub-type belongs
+        else:
+            sub_types.setdefault(s, set())
+    factors = {f["name"]: f["context"] for f in lists.factors()}
+    factors.update({f: c for f, c in (wl.get("factors") or {}).items() if c})
+    for f in (wl.get("factors") or {}):
+        factors.setdefault(f, "Environmental and physical")
+    sectors = list(dict.fromkeys(lists.sectors() + list(wl.get("sectors") or [])))
+    return {"types": types, "sub_types": sub_types, "sectors": sectors, "factors": factors}
+
+
+def check_events(events, country, areas=None, strict=True, subtypes=None, workbook_lists=None):
     """areas: the area names for this tree (default: the country's built-in list).
     strict: names outside the list are errors. With strict=False the list was taken from tab 3 itself,
-    so names cannot be wrong, but near-duplicate spellings get a warning instead."""
-    taxonomy = lists.hazard_types()
-    all_subs = [s for subs in taxonomy.values() for s in subs]
+    so names cannot be wrong, but near-duplicate spellings get a warning instead.
+    workbook_lists: tab Lists of the uploaded workbook (reader.read_lists). Hazard types, sub-types, sectors and
+    factors listed there are accepted like the app's own. Values in neither only get a warning: the row is used.
+    subtypes: older way to pass the workbook's sub-types (names only)."""
+    wl = dict(workbook_lists or {})
+    if subtypes and not wl.get("subs"):
+        wl["subs"] = {s: "" for s in subtypes}
+    eff = effective_lists(wl)
+    known_types, sub_types = eff["types"], eff["sub_types"]
     area_list = list(lists.area_names(country) if areas is None else areas)
     areas = area_list + ["National"]
-    sector_names = lists.sectors()
-    factor_names = lists.factor_names()
+    sector_names, factor_names = eff["sectors"], list(eff["factors"])
     groups = {}
 
     def add(key, level, title, fix, event):
@@ -42,6 +70,10 @@ def check_events(events, country, areas=None, strict=True):
         group["rows"].append({"row": event["_row"], "year": event.get("year"),
                               "label": event.get("sub") or event.get("type") or "",
                               "areas": event.get("areas", "")})
+
+    def maybe(value, options):
+        close = difflib.get_close_matches(value, options, n=1, cutoff=0.8)
+        return f"Did you mean {close[0]}? " if close else ""
 
     for e in events:
         year = e.get("year")
@@ -54,13 +86,24 @@ def check_events(events, country, areas=None, strict=True):
         if e.get("end") and e["end"] not in MONTHS and e["end"].lower() != "ongoing":
             add("end", "error", "End month is not from the list",
                 "Pick a month from the dropdown, or Ongoing.", e)
-        if e.get("type") not in taxonomy:
-            add("type", "error", "Hazard type is not in the list",
-                "Pick one of the hazard types in tab Lists.", e)
-        elif e.get("sub") not in taxonomy[e["type"]]:
-            fix = ("The sub-type exists, but under another hazard type. Change one of the two."
-                   if e.get("sub") in all_subs else "Pick a sub-type from tab Lists.")
-            add("sub", "error", "Sub-type does not belong to the hazard type", fix, e)
+        typ, sub = e.get("type"), e.get("sub")
+        if not typ:
+            add("type_missing", "error", "Hazard type is missing", "Pick a hazard type from tab Lists.", e)
+        elif typ not in known_types:
+            add("type_new", "warning", "New hazard type",
+                maybe(typ, known_types) + "The row is used and counted under this type. Add it to the Hazard types "
+                "column in tab Lists to stop this warning.", e)
+        if not sub:
+            add("sub_missing", "error", "Sub-type is missing",
+                "Pick a sub-type from tab Lists, or add a new one at the bottom of its column.", e)
+        elif typ and sub in sub_types and sub_types[sub] and typ not in sub_types[sub]:
+            add("sub", "error", "Sub-type belongs to another hazard type",
+                f"Tab Lists files {sub} under {', '.join(sorted(sub_types[sub]))}. Change the hazard type in the row, "
+                "or change the type next to the sub-type in tab Lists.", e)
+        elif sub not in sub_types:
+            add("sub_new", "warning", "New hazard sub-type",
+                maybe(sub, list(sub_types)) + "The row is used and the sub-type is counted as written. Add it to "
+                "the Hazard sub-types column in tab Lists to stop this warning.", e)
         if strict and [a for a in split_list(e.get("areas")) if a not in areas]:
             add("area_bad", "error", "Area name not recognised",
                 "Use the names in tab Lists, separated by semicolons.", e)

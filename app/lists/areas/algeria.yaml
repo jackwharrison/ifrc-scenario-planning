@@ -1,0 +1,79 @@
+# Country set-up for Algeria: the 69 wilayas, numbered as in the official list.
+# 01-48 since 1984, 49-58 promoted in 2019/2022, 59-69 created by decree 26-206 of 25 May 2026
+# (Journal officiel n° 40). The new wilayas become fully operational in 2027; events before
+# then are recorded under the wilaya that existed at the time.
+# pcode: optional. Copy from the OCHA administrative boundaries for Algeria on HDX if needed.
+country: Algeria
+area_column: Wilayas
+area_label: wilaya
+areas:
+  - {name: "Adrar", code: "01", pcode: ""}
+  - {name: "Chlef", code: "02", pcode: ""}
+  - {name: "Laghouat", code: "03", pcode: ""}
+  - {name: "Oum El Bouaghi", code: "04", pcode: ""}
+  - {name: "Batna", code: "05", pcode: ""}
+  - {name: "Béjaïa", code: "06", pcode: ""}
+  - {name: "Biskra", code: "07", pcode: ""}
+  - {name: "Béchar", code: "08", pcode: ""}
+  - {name: "Blida", code: "09", pcode: ""}
+  - {name: "Bouïra", code: "10", pcode: ""}
+  - {name: "Tamanrasset", code: "11", pcode: ""}
+  - {name: "Tébessa", code: "12", pcode: ""}
+  - {name: "Tlemcen", code: "13", pcode: ""}
+  - {name: "Tiaret", code: "14", pcode: ""}
+  - {name: "Tizi Ouzou", code: "15", pcode: ""}
+  - {name: "Algiers", code: "16", pcode: ""}
+  - {name: "Djelfa", code: "17", pcode: ""}
+  - {name: "Jijel", code: "18", pcode: ""}
+  - {name: "Sétif", code: "19", pcode: ""}
+  - {name: "Saïda", code: "20", pcode: ""}
+  - {name: "Skikda", code: "21", pcode: ""}
+  - {name: "Sidi Bel Abbès", code: "22", pcode: ""}
+  - {name: "Annaba", code: "23", pcode: ""}
+  - {name: "Guelma", code: "24", pcode: ""}
+  - {name: "Constantine", code: "25", pcode: ""}
+  - {name: "Médéa", code: "26", pcode: ""}
+  - {name: "Mostaganem", code: "27", pcode: ""}
+  - {name: "M'Sila", code: "28", pcode: ""}
+  - {name: "Mascara", code: "29", pcode: ""}
+  - {name: "Ouargla", code: "30", pcode: ""}
+  - {name: "Oran", code: "31", pcode: ""}
+  - {name: "El Bayadh", code: "32", pcode: ""}
+  - {name: "Illizi", code: "33", pcode: ""}
+  - {name: "Bordj Bou Arréridj", code: "34", pcode: ""}
+  - {name: "Boumerdès", code: "35", pcode: ""}
+  - {name: "El Tarf", code: "36", pcode: ""}
+  - {name: "Tindouf", code: "37", pcode: ""}
+  - {name: "Tissemsilt", code: "38", pcode: ""}
+  - {name: "El Oued", code: "39", pcode: ""}
+  - {name: "Khenchela", code: "40", pcode: ""}
+  - {name: "Souk Ahras", code: "41", pcode: ""}
+  - {name: "Tipaza", code: "42", pcode: ""}
+  - {name: "Mila", code: "43", pcode: ""}
+  - {name: "Aïn Defla", code: "44", pcode: ""}
+  - {name: "Naâma", code: "45", pcode: ""}
+  - {name: "Aïn Témouchent", code: "46", pcode: ""}
+  - {name: "Ghardaïa", code: "47", pcode: ""}
+  - {name: "Relizane", code: "48", pcode: ""}
+  - {name: "Timimoun", code: "49", pcode: ""}
+  - {name: "Bordj Badji Mokhtar", code: "50", pcode: ""}
+  - {name: "Ouled Djellal", code: "51", pcode: ""}
+  - {name: "Béni Abbès", code: "52", pcode: ""}
+  - {name: "In Salah", code: "53", pcode: ""}
+  - {name: "In Guezzam", code: "54", pcode: ""}
+  - {name: "Touggourt", code: "55", pcode: ""}
+  - {name: "Djanet", code: "56", pcode: ""}
+  - {name: "El M'Ghair", code: "57", pcode: ""}
+  - {name: "El Menia", code: "58", pcode: ""}
+  - {name: "Aflou", code: "59", pcode: ""}
+  - {name: "Barika", code: "60", pcode: ""}
+  - {name: "El Kantara", code: "61", pcode: ""}
+  - {name: "Bir El Ater", code: "62", pcode: ""}
+  - {name: "El Aricha", code: "63", pcode: ""}
+  - {name: "Ksar Chellala", code: "64", pcode: ""}
+  - {name: "Aïn Oussera", code: "65", pcode: ""}
+  - {name: "Messaad", code: "66", pcode: ""}
+  - {name: "Ksar El Boukhari", code: "67", pcode: ""}
+  - {name: "Bou Saâda", code: "68", pcode: ""}
+  - {name: "El Abiodh Sidi Cheikh", code: "69", pcode: ""}
+example_workbook: algeria_example.xlsx   # in /samples, offered on the upload page

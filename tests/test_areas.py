@@ -109,5 +109,123 @@ class GenericFlowTests(unittest.TestCase):
         self.assertIn('"areaLabel": "area"', page)
 
 
+
+class SubtypeTests(unittest.TestCase):
+    """Hazard sub-types are open: new ones are kept, and listing them in tab Lists removes the warning."""
+
+    def test_new_subtype_is_kept_with_a_warning(self):
+        data = generic_workbook("Lithuania", [event(2020, "Storm surge", "Kaunas", typ="Hydrological"),
+                                              event(2021, "Flash floood", "Kaunas")])
+        result = read_workbook(data, "Areas")
+        used, left_out, issues = check_events(result.events, "Lithuania", areas=["Kaunas"], subtypes=result.subtypes)
+        self.assertEqual(left_out, [])
+        new = next(g for g in issues if g["key"] == "sub_new")
+        self.assertEqual([r["row"] for r in new["rows"]], [2, 3])
+        self.assertEqual(len(new["rows"]), 2)
+
+    def test_subtype_added_to_lists_has_no_warning(self):
+        data = generic_workbook("Lithuania", [event(2020, "Storm surge", "Kaunas", typ="Hydrological")])
+        wb = load_workbook(io.BytesIO(data))
+        lst = wb["Lists"]
+        col = [c.value for c in lst[1]].index("Hazard sub-types") + 1
+        last = max(r for r in range(1, lst.max_row + 1) if lst.cell(row=r, column=col).value)
+        lst.cell(row=last + 1, column=col, value="Storm surge")
+        out = io.BytesIO(); wb.save(out)
+        result = read_workbook(out.getvalue(), "Areas")
+        self.assertIn("Storm surge", result.subtypes)
+        _, left_out, issues = check_events(result.events, "Lithuania", areas=["Kaunas"], subtypes=result.subtypes)
+        self.assertEqual(left_out, [])
+        self.assertNotIn("sub_new", {g["key"] for g in issues})
+
+    def test_subtype_under_wrong_type_is_still_an_error(self):
+        data = generic_workbook("Lithuania", [event(2020, "Earthquake", "Kaunas", typ="Hydrological")])
+        result = read_workbook(data, "Areas")
+        _, left_out, issues = check_events(result.events, "Lithuania", areas=["Kaunas"], subtypes=result.subtypes)
+        self.assertEqual(len(left_out), 1)
+        self.assertIn("sub", {g["key"] for g in issues})
+
+    def test_area_column_with_another_name_is_found(self):
+        """A workbook made with another set-up (for example "Wilayas") still reads in an app without that set-up."""
+        data = generic_workbook("Lithuania", [event(2020, "Flash flood", "Kaunas")])
+        wb = load_workbook(io.BytesIO(data))
+        ws = wb["3. Hazard list"]
+        col = [c.value for c in ws[1]].index("Areas") + 1
+        ws.cell(row=1, column=col, value="Wilayas")
+        out = io.BytesIO(); wb.save(out)
+        result = read_workbook(out.getvalue(), "Areas")
+        self.assertIsNone(result.problem)
+        self.assertEqual(result.events[0]["areas"], "Kaunas")
+
+
+
+
+def add_to_lists(data, values):
+    """Type values into empty cells at the bottom of columns in tab Lists. values: {header: [value, ...]}."""
+    wb = load_workbook(io.BytesIO(data))
+    lst = wb["Lists"]
+    headers = [c.value for c in lst[1]]
+    for header, vals in values.items():
+        col = headers.index(header) + 1
+        last = max([r for r in range(1, lst.max_row + 1) if lst.cell(row=r, column=col).value] or [1])
+        for i, v in enumerate(vals, 1):
+            lst.cell(row=last + i, column=col, value=v)
+    out = io.BytesIO()
+    wb.save(out)
+    return out.getvalue()
+
+
+class WorkbookListsTests(unittest.TestCase):
+    """Everything in tab Lists can be extended by the National Society without changing the app."""
+
+    def check(self, data):
+        result = read_workbook(data, "Areas")
+        return result, check_events(result.events, "Lithuania", areas=["Kaunas"], workbook_lists=result.lists)
+
+    def test_new_type_subtype_sector_and_factor_from_lists(self):
+        row = event(2020, "Bark beetle outbreak", "Kaunas", typ="Forest health",
+                    **{"Sectors affected": "Forestry", "Underlying factors (tags)": "Weak forest management"})
+        data = add_to_lists(generic_workbook("Lithuania", [row]), {
+            "Hazard types": ["Forest health"],
+            "Hazard sub-types": ["Bark beetle outbreak"], "Sub-type belongs to": ["Forest health"],
+            "Sectors": ["Forestry"],
+            "Underlying factors": ["Weak forest management"], "Factor goes under": ["Political"]})
+        result, (used, left_out, issues) = self.check(data)
+        self.assertEqual(left_out, [])
+        self.assertFalse({"type_new", "sub_new", "tags"} & {g["key"] for g in issues})
+        self.assertEqual(result.lists["factors"]["Weak forest management"], "Political")
+
+        from app.tree.rules import build_tree
+        from app.workbook.checks import effective_lists
+        tree = build_tree(used, {}, "Lithuania", "county", effective_lists(result.lists)["factors"])
+        political = next(b for b in tree["context"] if b["id"] == "political")
+        self.assertTrue(any("Weak forest management" in l["text"] for l in political["lines"]))
+        self.assertTrue(any("Forest health" in l["text"] for b in tree["shock"] for l in b["lines"]))
+
+    def test_unlisted_type_is_kept_with_a_warning(self):
+        _, (used, left_out, issues) = self.check(generic_workbook("Lithuania", [
+            event(2020, "Bark beetle outbreak", "Kaunas", typ="Forest health")]))
+        self.assertEqual(len(used), 1)
+        self.assertIn("type_new", {g["key"] for g in issues})
+
+    def test_lists_can_move_a_subtype_to_another_type(self):
+        """The workbook decides: if tab Lists puts Wildfire under Meteorological, that is what counts."""
+        data = add_to_lists(generic_workbook("Lithuania", [event(2020, "Wildfire", "Kaunas", typ="Meteorological")]),
+                            {"Hazard sub-types": [], })
+        wb = load_workbook(io.BytesIO(data))
+        lst = wb["Lists"]
+        headers = [c.value for c in lst[1]]
+        sub_col, type_col = headers.index("Hazard sub-types") + 1, headers.index("Sub-type belongs to") + 1
+        row = next(r for r in range(2, lst.max_row + 1) if lst.cell(row=r, column=sub_col).value == "Wildfire")
+        lst.cell(row=row, column=type_col, value="Meteorological")
+        out = io.BytesIO(); wb.save(out)
+        _, (used, left_out, issues) = self.check(out.getvalue())
+        self.assertEqual(left_out, [])
+        self.assertNotIn("sub", {g["key"] for g in issues})
+
+    def test_old_workbook_without_new_columns_still_works(self):
+        _, (used, left_out, _) = self.check(generic_workbook("Lithuania", [event(2020, "Flash flood", "Kaunas")]))
+        self.assertEqual((len(used), left_out), (1, []))
+
+
 if __name__ == "__main__":
     unittest.main()

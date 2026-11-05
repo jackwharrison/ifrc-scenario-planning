@@ -88,9 +88,10 @@ def box(bid, title, kind, lines_, note="", **extra):
 
 # ---------- the tree ----------
 
-def build_tree(events, scores, country, area_label=None):
+def build_tree(events, scores, country, area_label=None, factor_contexts=None):
     """events: checked events. scores: {"type|sub": {"l": int, "i": int}}.
-    area_label: the word for one area (oblast, province...); defaults to the country set-up."""
+    area_label: the word for one area (oblast, province...); defaults to the country set-up.
+    factor_contexts: {factor: Context heading} from the workbook's tab Lists; the app's defaults fill the gaps."""
     E = events
     if not E:
         return None
@@ -226,13 +227,13 @@ def build_tree(events, scores, country, area_label=None):
             "Counts come from the Transport tag and the remote-areas factor. Access constraints for responders need your input."),
     ]
 
-    # CONTEXT: factor tags grouped by the context column set in factors.yaml
+    # CONTEXT: factor tags grouped by Context heading: from tab Lists of the workbook, else factors.yaml
     factor_groups = count_by(E, lambda e: split_list(e.get("factors")))
 
     def factor_lines(category):
         return [line("f-" + f, f"{f}: listed for {plural(len(l), 'event')}, mostly {subs_text(l)}.",
                      f"Count of the Underlying factors tag, grouped under {category}.", l)
-                for f, l in factor_groups if lists.factor_context(f) == category]
+                for f, l in factor_groups if (factor_contexts or {}).get(f, lists.factor_context(f)) == category]
 
     def societal(subs, lid):
         l = [e for e in E if e["sub"] in subs]

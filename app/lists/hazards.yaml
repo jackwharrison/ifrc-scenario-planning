@@ -34,6 +34,7 @@ hazard_types:
   - Deforestation
   - Soil erosion
   - Pollution
+  - Wildfire
   Technological:
   - Tailings dam failure
   - Dam / reservoir failure
@@ -43,6 +44,7 @@ hazard_types:
   - Power outage / blackout
   - Transport accident
   Biological:
+  - Cholera
   - Measles
   - Influenza / ARI
   - COVID-19

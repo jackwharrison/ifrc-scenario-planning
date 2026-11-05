@@ -1,6 +1,8 @@
-"""Builds the blank hazard workbook for a country, with dropdowns taken from the shared lists.
+"""Builds the blank hazard workbook for a country.
 
-Because the dropdowns come from the same lists the checks use, the template and the app never disagree.
+Tab Lists is filled with the app's default lists (app/lists/*.yaml) and left open for the National Society to
+extend. The app reads tab Lists back from every uploaded workbook, so a new hazard, sector or factor only needs
+typing in the spreadsheet.
 """
 import io
 
@@ -10,11 +12,12 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 from .. import lists
-from .columns import MONTHS, REQUIRED, columns_for
+from .columns import CONTEXTS, LIST_HEADERS, MONTHS, REQUIRED, columns_for
 
 WIDTHS = {"year": 8, "start": 10, "end": 10, "type": 15, "sub": 24, "areas": 26, "desc": 50, "impact": 45,
           "sectors": 28, "factors": 36, "factorNotes": 40, "mitigating": 40, "sources": 40, "verified": 9}
 ROWS = 500
+SPARE = 40      # empty rows left under each editable list in tab Lists
 
 
 def build_template(country):
@@ -40,12 +43,18 @@ def build_template(country):
         (f"{area_column}, Sectors affected, Underlying factors (tags): one or more values from tab Lists, "
          f"separated by a semicolon, for example \"{'; '.join(area_names[:2]) or 'North; Capital'}\". "
          "Use National for country-wide events.", font),
-        ((f"{area_column} in tab Lists: the first-level areas the app knows for {country}. If your National Society "
-          "uses other names or another level, change the list there; the app reads it from the file you upload.")
-         if area_names else
-         (f"{area_column} in tab Lists: type your first-level areas (provinces, regions, districts...) once, "
-          "one per row, before filling in tab 3. The app checks tab 3 against this list. If you leave it empty, "
-          "the app uses the names typed in tab 3 and warns about spellings that look alike."), bold),
+        ("Tab Lists is yours to change. Every list there feeds the dropdowns in tab 3 and is read by the app when "
+         "you upload, so nothing has to change in the app itself:", bold),
+        ("- Add a hazard type, sub-type, sector or underlying factor by typing it in an empty yellow cell at the "
+         "bottom of its column. It appears in the dropdowns straight away.", font),
+        ("- For a new sub-type, also say which hazard type it belongs to (next column). For a new underlying factor, "
+         "say which Context heading it goes under: Political, Economic, Socio-cultural, Security, or Environmental "
+         "and physical.", font),
+        ((f"- {area_column}: the first-level areas the app knows for {country}. If your National Society uses other "
+          "names or another level, change the list.") if area_names else
+         (f"- {area_column}: type your first-level areas (provinces, regions, districts...) once, one per row, "
+          "before filling in tab 3. If you leave it empty, the app uses the names typed in tab 3 and warns about "
+          "spellings that look alike."), font),
         ("Killed, Injured, Affected, Displaced, Houses damaged: whole numbers. Leave empty if unknown; "
          "enter 0 only if the source says none.", font),
         ("Verified: Yes once figures are checked against a primary source.", font), ("", font),
@@ -71,34 +80,59 @@ def build_template(country):
     ws.row_dimensions[1].height = 32
     ws.freeze_panes = "C2"
 
+    # Tab Lists. Editable lists get SPARE empty yellow rows; the dropdowns in tab 3 reach into them, so anything
+    # typed there can be picked straight away. The reader takes all of these back from the uploaded file.
     lst = wb.create_sheet("Lists")
     taxonomy = lists.hazard_types()
-    subs = [s for v in taxonomy.values() for s in v]
-    cols = [("Months", MONTHS + ["Ongoing"]), ("Hazard types", list(taxonomy)), ("Hazard sub-types", subs),
-            (area_column, area_names + ["National"]), ("Sectors", lists.sectors()),
-            ("Underlying factors", lists.factor_names()), ("Verified", ["Yes", "No"])]
-    for j, (head, values) in enumerate(cols, 1):
+    sub_pairs = [(s, t) for t, subs_ in taxonomy.items() for s in subs_]
+    factor_pairs = [(f["name"], f["context"]) for f in lists.factors()]
+    cols = [  # (header, values, editable)
+        ("Months", MONTHS + ["Ongoing"], False),
+        (LIST_HEADERS["types"], list(taxonomy), True),
+        (LIST_HEADERS["subs"], [s for s, _ in sub_pairs], True),
+        (LIST_HEADERS["sub_type"], [t for _, t in sub_pairs], True),
+        (area_column, area_names + ["National"], not area_names),
+        (LIST_HEADERS["sectors"], lists.sectors(), True),
+        (LIST_HEADERS["factors"], [f for f, _ in factor_pairs], True),
+        (LIST_HEADERS["factor_context"], [c for _, c in factor_pairs], True),
+        ("Verified", ["Yes", "No"], False),
+        (LIST_HEADERS["contexts"], list(CONTEXTS), False),
+    ]
+    col_of, size = {}, {}
+    for j, (head, values, editable) in enumerate(cols, 1):
+        col_of[head], size[head] = get_column_letter(j), len(values) + (SPARE if editable else 0)
         lst.cell(row=1, column=j, value=head).font = bold
         for i, v in enumerate(values, 2):
             lst.cell(row=i, column=j, value=v).font = font
-        lst.column_dimensions[get_column_letter(j)].width = 32
-        if head == area_column and not area_names:
-            for i in range(len(values) + 2, len(values) + 42):    # space to type the areas, below National
+        lst.column_dimensions[get_column_letter(j)].width = 30
+        if editable:
+            for i in range(len(values) + 2, len(values) + 2 + SPARE):
                 lst.cell(row=i, column=j).fill = yellow
+    lst.freeze_panes = "A2"
+
+    def ref(head):
+        return f"=Lists!${col_of[head]}$2:${col_of[head]}${size[head] + 1}"
+
+    def dropdown(sheet, cells, formula, prompt):
+        dv = DataValidation(type="list", formula1=formula, allow_blank=True)
+        dv.prompt, dv.showInputMessage = prompt, True     # no error box: new values can be typed in tab Lists
+        sheet.add_data_validation(dv)
+        dv.add(cells)
 
     letter = {field: get_column_letter(j) for j, (_, field) in enumerate(columns, 1)}
-
-    def dropdown(field, list_col, n, prompt):
-        dv = DataValidation(type="list", formula1=f"=Lists!${list_col}$2:${list_col}${n + 1}", allow_blank=True)
-        dv.error, dv.errorTitle, dv.prompt, dv.showInputMessage = "Pick a value from the list", "Not in list", prompt, True
-        ws.add_data_validation(dv)
-        dv.add(f"{letter[field]}2:{letter[field]}{ROWS}")
-
-    dropdown("start", "A", 12, "Pick a month")
-    dropdown("end", "A", 13, "Pick a month, or Ongoing")
-    dropdown("type", "B", len(taxonomy), "Pick a hazard type")
-    dropdown("sub", "C", len(subs), "Pick a sub-type")
-    dropdown("verified", "G", 2, "Yes or No")
+    col = lambda field: f"{letter[field]}2:{letter[field]}{ROWS}"
+    dropdown(ws, col("start"), "=Lists!$A$2:$A$13", "Pick a month")
+    dropdown(ws, col("end"), "=Lists!$A$2:$A$14", "Pick a month, or Ongoing")
+    dropdown(ws, col("type"), ref(LIST_HEADERS["types"]), "Pick a hazard type")
+    dropdown(ws, col("sub"), ref(LIST_HEADERS["subs"]), "Pick a sub-type, or add a new one in tab Lists")
+    dropdown(ws, col("verified"), ref("Verified"), "Yes or No")
+    # In tab Lists itself: the type of each sub-type, and the Context heading of each factor
+    sub_type_col = col_of[LIST_HEADERS["sub_type"]]
+    dropdown(lst, f"{sub_type_col}2:{sub_type_col}{size[LIST_HEADERS['sub_type']] + 1}", ref(LIST_HEADERS["types"]),
+             "Which hazard type this sub-type belongs to")
+    ctx_col = col_of[LIST_HEADERS["factor_context"]]
+    dropdown(lst, f"{ctx_col}2:{ctx_col}{size[LIST_HEADERS['factor_context']] + 1}", ref(LIST_HEADERS["contexts"]),
+             "Which Context heading this factor goes under")
     for field in ("killed", "injured", "affected", "displaced", "houses"):
         dv = DataValidation(type="whole", operator="greaterThanOrEqual", formula1="0", allow_blank=True)
         dv.error = "Whole numbers only"

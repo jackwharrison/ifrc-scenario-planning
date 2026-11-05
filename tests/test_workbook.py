@@ -1,3 +1,4 @@
+import io
 import unittest
 
 from app import create_app
@@ -17,10 +18,22 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual(first["year"], 2002)
         self.assertEqual(first["sub"], "Mining accident")
 
-    def test_wrong_area_column_is_old_layout(self):
+    def test_area_column_found_by_position(self):
+        """The area column may have another name (Oblasts, Wilayas...): it sits right after Hazard sub-type."""
         result = read_workbook(example_bytes(), "Regions")
+        self.assertIsNone(result.problem)
+        self.assertEqual(len(result.events), 36)
+
+    def test_missing_column_is_old_layout(self):
+        from openpyxl import load_workbook
+        wb = load_workbook(io.BytesIO(example_bytes()))
+        ws = wb["3. Hazard list"]
+        col = [c.value for c in ws[1]].index("Verified") + 1
+        ws.cell(row=1, column=col, value="Checked")
+        out = io.BytesIO(); wb.save(out)
+        result = read_workbook(out.getvalue(), "Oblasts")
         self.assertEqual(result.problem["kind"], "old_layout")
-        self.assertIn("Regions", result.problem["missing"])
+        self.assertIn("Verified", result.problem["missing"])
 
     def test_not_excel(self):
         self.assertEqual(read_workbook(b"not a workbook", "Oblasts").problem["kind"], "broken")
