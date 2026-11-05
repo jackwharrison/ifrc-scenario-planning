@@ -11,6 +11,9 @@
       <div class="combo-wrap"><input id="countryInput" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="countryList" autocomplete="off" spellcheck="false" placeholder="Type to search, for example Kyr or DRC" value="{{ ready[0] if ready else '' }}">
       <ul id="countryList" role="listbox" class="combo-list" hidden></ul></div>
       <p class="combo-status" id="countryStatus"></p></div>
+    <div class="field hidden" id="labelField"><label for="areaLabel"><span style="font-weight:600;font-size:.9rem">What are the first-level areas called?</span></label>
+      <input id="areaLabel" name="area_label" type="text" maxlength="30" placeholder="For example province, region, district or state" style="max-width:380px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+      <span class="combo-status">Used in the tree and the area table. Leave empty to say “area”.</span></div>
     <div class="field" role="radiogroup" aria-label="Type of tree"><span>Type of tree</span><div class="choices">
       {% for key, t in types.items() %}
       <label class="choice"><input type="radio" name="tree_type" value="{{ key }}" {{ 'checked' if loop.first }}><strong>{{ t.name }}</strong><span>{{ t.what }}</span>{% if not t.available %}<span class="tag man">Not built yet</span>{% endif %}</label>

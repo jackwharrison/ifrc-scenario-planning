@@ -86,7 +86,23 @@ main{max-width:1440px;margin:0 auto;padding:24px 24px 56px}
 .viewtoggle{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin-bottom:16px;background:var(--surface)}
 .viewtoggle button{border:0;background:none;padding:7px 18px;font-weight:600;cursor:pointer;color:var(--muted)}
 .viewtoggle button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
-.map-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(300px,1fr);gap:24px;align-items:start}
+.map-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);gap:24px;align-items:start}
+.map-grid > *{min-width:0}
+/* By-area table: rows are areas, columns hazard types (or sub-types), cells shaded by event count */
+.otab-wrap{overflow-x:auto;margin-top:12px}
+.otab thead th{white-space:normal;vertical-align:bottom;font-size:.78rem;line-height:1.25;padding:8px 6px;overflow-wrap:anywhere}
+.otab thead th.c{text-align:center}
+.otab th[scope="row"]{padding:0;border-bottom:1px solid var(--soft);color:var(--ink);white-space:nowrap}
+.oname{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 12px;font-weight:700;cursor:pointer;border-left:4px solid transparent;color:inherit}
+.otab tr.orow{cursor:pointer}
+.otab tr.orow:hover th,.otab tr.orow:hover td.num,.otab tr.sel th,.otab tr.sel td.num{background:var(--soft)}
+.otab tr.sel .oname{border-left-color:var(--red)}
+.otab td.c{--hi:#A3121F;--p:0%;text-align:center;font-weight:700;min-width:44px;padding:8px 6px;background:color-mix(in srgb,var(--hi) var(--p),var(--surface));border:1px solid var(--surface)}
+.otab td.c.dark{color:#FFFFFF}
+.otab td.c.z{color:var(--muted);font-weight:400}
+.area-search input{width:100%;max-width:300px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);margin-top:4px}
+.area-source{font-size:.9rem;margin:0 0 14px;max-width:90ch}
+.area-names{display:block;color:var(--muted);font-size:.85rem;margin-top:2px}
 .map-grid .side{display:flex;flex-direction:column;gap:16px}
 .slicer{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .slicer.sub{padding:8px 0 4px 12px;border-left:3px solid var(--line)}
@@ -94,13 +110,6 @@ main{max-width:1440px;margin:0 auto;padding:24px 24px 56px}
 .slice span{font-weight:700;color:var(--muted);font-size:.8rem}
 .slice[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:var(--on-red)}
 .slice[aria-pressed="true"] span{color:var(--on-red)}
-.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,96px);gap:8px;margin:14px 0 10px}
-.tile{--hi:#A3121F;--p:0%;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;padding:9px 11px;border:1px solid var(--line);border-radius:8px;cursor:pointer;text-align:left;background:color-mix(in srgb,var(--hi) var(--p),var(--surface));color:var(--ink)}
-.tile.dark{color:#FFFFFF;border-color:transparent}
-.tile:hover{outline:2px solid var(--ink);outline-offset:1px}
-.tile.sel{outline:3px solid var(--ink);outline-offset:2px}
-.t-name{font-weight:700;font-size:.9rem}
-.t-n{font-family:Montserrat,sans-serif;font-weight:700;font-size:1.5rem;line-height:1}
 .legend{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted);flex-wrap:wrap}
 .legend .sw{--hi:#A3121F;--p:0%;width:16px;height:12px;border-radius:2px;border:1px solid var(--line);background:color-mix(in srgb,var(--hi) var(--p),var(--surface));margin-left:6px}
 .map-note{font-size:.82rem;color:var(--muted);margin-top:10px}
@@ -111,8 +120,7 @@ main{max-width:1440px;margin:0 auto;padding:24px 24px 56px}
 .evlist .figs{color:var(--muted);font-size:.84rem}
 .evlist .multi{color:var(--muted);font-size:.8rem;font-weight:400}
 .muted{color:var(--muted);font-size:.9rem}
-@media (max-width:1050px){.map-grid{grid-template-columns:1fr}}
-@media (max-width:560px){.tiles{grid-template-rows:repeat(3,80px)}.t-name{font-size:.78rem}.t-n{font-size:1.2rem}}
+@media (max-width:1050px){.map-grid{grid-template-columns:minmax(0,1fr)}}
 /* Start and help */
 .start-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}

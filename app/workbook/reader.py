@@ -6,11 +6,37 @@ from openpyxl import load_workbook
 from .columns import HAZARD_SHEET_HINT, NUMBER_FIELDS, columns_for
 
 
+GENERIC_AREA_COLUMN = "Areas"
+
+
 class ReadResult:
-    def __init__(self, events=None, problem=None):
+    def __init__(self, events=None, problem=None, areas=None):
         self.events = events or []
         # problem is None when the file could be read, otherwise a dict describing why not
         self.problem = problem
+        # area names listed in tab Lists of the workbook (empty if that column is missing or empty)
+        self.areas = areas or []
+
+
+def _list_areas(wb, area_column):
+    """Area names from tab Lists: the column headed like the area column in tab 3. National is left out."""
+    name = next((n for n in wb.sheetnames if n.strip().lower() == "lists"), None)
+    if not name:
+        return []
+    rows = list(wb[name].iter_rows(values_only=True))
+    if not rows:
+        return []
+    header = [_clean_text(c) for c in rows[0]]
+    if area_column not in header:
+        return []
+    j = header.index(area_column)
+    seen, areas = set(), []
+    for row in rows[1:]:
+        value = _clean_text(row[j]) if j < len(row) else ""
+        if value and value.lower() != "national" and value not in seen:
+            seen.add(value)
+            areas.append(value)
+    return areas
 
 
 def _clean_text(value):
@@ -30,7 +56,10 @@ def _clean_number(value):
 
 
 def read_workbook(data, area_column):
-    """data: bytes of an .xlsx file. area_column: header of the area column for this country."""
+    """data: bytes of an .xlsx file. area_column: header of the area column for this country.
+
+    A workbook made from the generic template (column "Areas") is accepted for every country.
+    """
     try:
         wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
     except Exception:
@@ -51,6 +80,8 @@ def read_workbook(data, area_column):
         return ReadResult(problem={"kind": "no_header", "sheet": sheet_name})
 
     header = [str(c).strip() if c is not None else "" for c in rows[header_index]]
+    if area_column not in header and GENERIC_AREA_COLUMN in header:
+        area_column = GENERIC_AREA_COLUMN    # a generic template works for every country
     columns = columns_for(area_column)
     missing = [h for h, _ in columns if h not in header]
     data_rows = [r for r in rows[header_index + 1:] if any(c is not None and str(c).strip() for c in r)]
@@ -70,4 +101,4 @@ def read_workbook(data, area_column):
             else:
                 event[field] = _clean_text(value)
         events.append(event)
-    return ReadResult(events=events)
+    return ReadResult(events=events, areas=_list_areas(wb, area_column))

@@ -88,13 +88,13 @@ def box(bid, title, kind, lines_, note="", **extra):
 
 # ---------- the tree ----------
 
-def build_tree(events, scores, country):
-    """events: checked events. scores: {"type|sub": {"l": int, "i": int}}."""
+def build_tree(events, scores, country, area_label=None):
+    """events: checked events. scores: {"type|sub": {"l": int, "i": int}}.
+    area_label: the word for one area (oblast, province...); defaults to the country set-up."""
     E = events
     if not E:
         return None
-    setup = lists.country_setup(country) or {}
-    area_label = setup.get("area_label", "area")
+    area_label = area_label or lists.setup_for(country).get("area_label", "area")
     T = {}
 
     # SHOCK

@@ -18,8 +18,9 @@ ROWS = 500
 
 
 def build_template(country):
-    setup = lists.country_setup(country)
+    setup = lists.setup_for(country)
     area_column = setup["area_column"]
+    area_names = lists.area_names(country)
     columns = columns_for(area_column)
     font = Font(name="Arial", size=10)
     bold = Font(name="Arial", size=10, bold=True)
@@ -37,8 +38,14 @@ def build_template(country):
          "the end month is simply earlier than the start month. Use Ongoing for events that have not ended.", font),
         ("Hazard type and sub-type: pick from the list (tab Lists).", font),
         (f"{area_column}, Sectors affected, Underlying factors (tags): one or more values from tab Lists, "
-         f"separated by a semicolon, for example \"{'; '.join(lists.area_names(country)[:2])}\". "
+         f"separated by a semicolon, for example \"{'; '.join(area_names[:2]) or 'North; Capital'}\". "
          "Use National for country-wide events.", font),
+        ((f"{area_column} in tab Lists: the first-level areas the app knows for {country}. If your National Society "
+          "uses other names or another level, change the list there; the app reads it from the file you upload.")
+         if area_names else
+         (f"{area_column} in tab Lists: type your first-level areas (provinces, regions, districts...) once, "
+          "one per row, before filling in tab 3. The app checks tab 3 against this list. If you leave it empty, "
+          "the app uses the names typed in tab 3 and warns about spellings that look alike."), bold),
         ("Killed, Injured, Affected, Displaced, Houses damaged: whole numbers. Leave empty if unknown; "
          "enter 0 only if the source says none.", font),
         ("Verified: Yes once figures are checked against a primary source.", font), ("", font),
@@ -68,13 +75,16 @@ def build_template(country):
     taxonomy = lists.hazard_types()
     subs = [s for v in taxonomy.values() for s in v]
     cols = [("Months", MONTHS + ["Ongoing"]), ("Hazard types", list(taxonomy)), ("Hazard sub-types", subs),
-            (area_column, lists.area_names(country) + ["National"]), ("Sectors", lists.sectors()),
+            (area_column, area_names + ["National"]), ("Sectors", lists.sectors()),
             ("Underlying factors", lists.factor_names()), ("Verified", ["Yes", "No"])]
     for j, (head, values) in enumerate(cols, 1):
         lst.cell(row=1, column=j, value=head).font = bold
         for i, v in enumerate(values, 2):
             lst.cell(row=i, column=j, value=v).font = font
         lst.column_dimensions[get_column_letter(j)].width = 32
+        if head == area_column and not area_names:
+            for i in range(len(values) + 2, len(values) + 42):    # space to type the areas, below National
+                lst.cell(row=i, column=j).fill = yellow
 
     letter = {field: get_column_letter(j) for j, (_, field) in enumerate(columns, 1)}
 

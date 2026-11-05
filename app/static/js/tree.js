@@ -1,7 +1,7 @@
-/* Review page: the tree with its editor panel, and the map view with slicers. Data comes from window.TREE. */
+/* Review page: the tree with its editor panel, and the by-area table with slicers. Data comes from window.TREE. */
 (function(){
   let T = window.TREE;
-  const st = { view:"tree", sel:"shock:hz", editing:null, mType:"all", mSub:"all", mArea:null };
+  const st = { view:"tree", sel:"shock:hz", editing:null, mType:"all", mSub:"all", mArea:null, q:"", showAll:false };
   const lc = s => /^[A-Z][a-z]/.test(s) ? s[0].toLowerCase() + s.slice(1) : s;
   const layer = k => T.view.layers.find(l => l.key === k);
   const findBox = key => { const [lk, bid] = key.split(":"); const L = layer(lk); return { L, b: L.boxes.find(x => x.id === bid) }; };
@@ -90,7 +90,9 @@
     });
   }
 
-  /* ---------- map (schematic tiles until real boundaries are added) ---------- */
+  /* ---------- by-area table: works from the area names alone, for any country ---------- */
+  const pluralWord = w => /[^aeiou]y$/i.test(w) ? w.slice(0, -1) + "ies" : /(s|sh|ch|x|z)$/i.test(w) ? w + "es" : w + "s";
+  const FOLD_AT = 15, TOP_ROWS = 20;
   function evLine(e){
     const f = []; if(e.killed) f.push(`${fmt(e.killed)} killed`); if(e.affected) f.push(`${fmt(e.affected)} affected`); if(e.displaced) f.push(`${fmt(e.displaced)} displaced`); if(e.houses) f.push(`${fmt(e.houses)} houses damaged`);
     const others = split(e.areas).filter(o => o !== st.mArea && o !== "National");
@@ -100,35 +102,55 @@
     const ev = T.events.filter(e => (st.mType === "all" || e.type === st.mType) && (st.mSub === "all" || e.sub === st.mSub));
     const types = countBy(T.events, e => e.type);
     const subs = st.mType === "all" ? [] : countBy(T.events.filter(e => e.type === st.mType), e => e.sub);
-    const per = {}; T.tiles.forEach(t => per[t.name] = []);
+    const per = {}; T.areas.forEach(a => per[a] = []);
     ev.forEach(e => split(e.areas).forEach(o => { if(per[o]) per[o].push(e); }));
     const nat = ev.filter(e => split(e.areas).includes("National")), none = ev.filter(e => !split(e.areas).length);
-    const max = Math.max(1, ...Object.values(per).map(l => l.length));
-    const shade = n => n ? Math.round(18 + (n / max) * 72) : 0;
+    const colKey = st.mType === "all" ? (e => e.type) : (e => e.sub);
+    const cols = countBy(Object.values(per).flat(), colKey).map(([c]) => c);
+    const cnt = (a, c) => per[a].filter(e => colKey(e) === c).length;
+    const cellMax = Math.max(1, ...T.areas.flatMap(a => cols.map(c => cnt(a, c))));
+    const shade = n => n ? Math.round(15 + (n / cellMax) * 70) : 0;
     const label = st.mSub !== "all" ? st.mSub : st.mType !== "all" ? st.mType : "All events";
-    const area = T.areaLabel, Area = area[0].toUpperCase() + area.slice(1);
+    const area = T.areaLabel, areas = pluralWord(area), Area = area[0].toUpperCase() + area.slice(1), aArea = (/^[aeiou]/i.test(area) ? "an " : "a ") + area;
+    const long = T.areas.length > FOLD_AT, q = (st.q || "").trim().toLowerCase();
+    const match = a => !q || a.toLowerCase().includes(q);
+    const sorted = T.areas.map(a => ({a, l: per[a]})).sort((x, y) => y.l.length - x.l.length || x.a.localeCompare(y.a));
+    const withEv = sorted.filter(r => r.l.length && match(r.a)), zero = sorted.filter(r => !r.l.length && match(r.a));
+    let rows = long ? withEv : withEv.concat(zero);
+    const hidden = long && !st.showAll && !q && rows.length > TOP_ROWS ? rows.length - TOP_ROWS : 0;
+    if(hidden) rows = rows.slice(0, TOP_ROWS);
     const chip = (k, v, l, n, cur) => `<button type="button" class="slice" data-${k}="${esc(v)}" aria-pressed="${cur === v}">${esc(l)}<span>${n}</span></button>`;
     const list = l => `<ul class="evlist">${[...l].sort((a, b) => b.year - a.year).map(evLine).join("")}</ul>`;
+    const row = r => `<tr class="orow ${st.mArea === r.a ? "sel" : ""}" data-a="${esc(r.a)}"><th scope="row"><button type="button" class="oname" data-a="${esc(r.a)}" aria-pressed="${st.mArea === r.a}">${esc(r.a)}${T.cities.includes(r.a) ? " city" : ""}</button></th>${cols.map(c => { const n = cnt(r.a, c), p = shade(n); return `<td class="c ${n ? "" : "z"} ${p >= 55 ? "dark" : ""}" style="--p:${p}%">${n || "–"}</td>`; }).join("")}<td class="num"><b>${r.l.length}</b></td><td class="num">${r.l.length ? Math.max(...r.l.map(e => e.year)) : "–"}</td></tr>`;
+    const table = !T.areas.length ? `<p class="muted" style="margin-top:12px">No ${esc(areas)} recorded. List them in tab Lists of the workbook, or fill in the ${esc(area)} column in tab 3, and upload again.</p>`
+      : `<div class="table-wrap otab-wrap"><table class="otab">
+        <thead><tr><th>${esc(Area)}</th>${cols.map(c => `<th class="c">${esc(c)}</th>`).join("")}<th class="num">Total</th><th class="num">Latest</th></tr></thead>
+        <tbody>${rows.map(row).join("") || `<tr><td colspan="${cols.length + 3}" class="muted">No ${esc(areas)} match “${esc(st.q)}” with events for this filter.</td></tr>`}</tbody></table></div>
+        ${hidden ? `<p style="margin-top:8px"><button type="button" class="act" id="showAll">Show all ${withEv.length} ${esc(areas)} with events</button></p>` : ""}
+        ${long && zero.length ? `<p class="map-note"><b>${plural(zero.length, area, areas)} with no recorded events${st.mType !== "all" ? " for this filter" : ""}:</b> ${zero.map(r => esc(r.a)).join(", ")}.</p>` : ""}`;
     host.innerHTML = `<div class="map-grid"><section class="card">
-      <div class="card-head"><h2>Events by ${esc(area)}</h2><p>${esc(label)}: ${plural(ev.length, "event")}</p></div>
+      <div class="card-head"><h2>Events by ${esc(area)}</h2><p>${esc(label)}: ${plural(ev.length, "event")}. ${st.mType === "all" ? "Columns are hazard types." : `Columns are ${esc(st.mType.toLowerCase())} sub-types.`}</p></div>
       <div class="card-body">
         <div class="slicer" role="group" aria-label="Hazard type">${chip("t", "all", "All events", T.events.length, st.mType)}${types.map(([t, l]) => chip("t", t, t, l.length, st.mType)).join("")}</div>
         ${subs.length ? `<div class="slicer sub" role="group" aria-label="Hazard sub-type">${chip("s", "all", "All " + st.mType.toLowerCase(), T.events.filter(e => e.type === st.mType).length, st.mSub)}${subs.map(([s, l]) => chip("s", s, s, l.length, st.mSub)).join("")}</div>` : ""}
-        <div class="tiles" role="group" aria-label="${esc(Area)}s">${T.tiles.map(t => { const k = per[t.name].length, p = shade(k);
-          return `<button type="button" class="tile ${p >= 58 ? "dark" : ""} ${st.mArea === t.name ? "sel" : ""}" style="grid-row:${t.tile[0] + 1};grid-column:${t.tile[1] + 1};--p:${p}%" data-a="${esc(t.name)}" aria-pressed="${st.mArea === t.name}"><span class="t-name">${esc(t.name)}${t.city ? " city" : ""}</span><span class="t-n">${k}</span></button>`; }).join("")}</div>
-        <div class="legend"><span class="sw" style="--p:0%"></span>None<span class="sw" style="--p:25%"></span>Fewer<span class="sw" style="--p:90%"></span>More events</div>
-        <p class="map-note">Schematic layout, not to scale. Real boundaries can replace it once P-codes and OCHA boundary files are added. Events covering several ${esc(area)}s count once in each, so the numbers add up to more than the total.</p>
+        ${long ? `<div class="area-search"><label for="areaQ" class="sr-only">Find ${esc(aArea)}</label><input id="areaQ" type="search" placeholder="Find ${esc(aArea)}" value="${esc(st.q || "")}" autocomplete="off"></div>` : ""}
+        ${table}
+        <div class="legend" style="margin-top:10px"><span class="sw" style="--p:0%"></span>None<span class="sw" style="--p:30%"></span>Fewer<span class="sw" style="--p:85%"></span>More events</div>
+        <p class="map-note">Sorted by total events. Click ${esc(aArea)} to see its events. Events covering several ${esc(areas)} count once in each, so the totals add up to more than the number of events.</p>
       </div></section>
       <div class="side">
-        <section class="card"><div class="card-head"><h2>${st.mArea ? esc(st.mArea) : esc(Area) + " details"}</h2><p>${st.mArea ? `${plural(per[st.mArea].length, "event")} (${esc(label)})` : `Click a ${esc(area)} on the map`}</p></div>
+        <section class="card"><div class="card-head"><h2>${st.mArea ? esc(st.mArea) : esc(Area) + " details"}</h2><p>${st.mArea ? `${plural(per[st.mArea].length, "event")} (${esc(label)})` : `Click ${esc(aArea)} in the table`}</p></div>
           <div class="card-body">${st.mArea ? (per[st.mArea].length ? list(per[st.mArea]) : `<p class="muted">Nothing recorded here for this filter.</p>`) : `<p class="muted">The list shows each event with its figures, newest first.</p>`}</div></section>
-        <section class="card"><div class="card-head"><h2>Nationwide events</h2><p>${plural(nat.length, "event")} (${esc(label)}). Not shown on the map.</p></div>
+        <section class="card"><div class="card-head"><h2>Nationwide events</h2><p>${plural(nat.length, "event")} (${esc(label)}). Not counted per ${esc(area)}.</p></div>
           <div class="card-body">${nat.length ? list(nat) : `<p class="muted">None for this filter.</p>`}</div></section>
-        ${none.length ? `<section class="card"><div class="card-head"><h2>No area recorded</h2><p>${plural(none.length, "event")}. Add an area in the workbook to map ${none.length === 1 ? "it" : "them"}.</p></div><div class="card-body">${list(none)}</div></section>` : ""}
+        ${none.length ? `<section class="card"><div class="card-head"><h2>No ${esc(area)} recorded</h2><p>${plural(none.length, "event")}. Add ${esc(aArea)} in the workbook to count ${none.length === 1 ? "it" : "them"} here.</p></div><div class="card-body">${list(none)}</div></section>` : ""}
       </div></div>`;
     host.querySelectorAll(".slice[data-t]").forEach(b => b.onclick = () => { st.mType = b.dataset.t; st.mSub = "all"; drawMap(); host.querySelector(`.slice[data-t="${CSS.escape(st.mType)}"]`)?.focus(); });
     host.querySelectorAll(".slice[data-s]").forEach(b => b.onclick = () => { st.mSub = b.dataset.s; drawMap(); host.querySelector(`.slice[data-s="${CSS.escape(st.mSub)}"]`)?.focus(); });
-    host.querySelectorAll(".tile").forEach(b => b.onclick = () => { const a = b.dataset.a; st.mArea = st.mArea === a ? null : a; drawMap(); host.querySelector(`.tile[data-a="${CSS.escape(a)}"]`)?.focus(); });
+    host.querySelectorAll(".orow").forEach(r => r.onclick = () => { const a = r.dataset.a; st.mArea = st.mArea === a ? null : a; drawMap(); host.querySelector(`.oname[data-a="${CSS.escape(a)}"]`)?.focus(); });
+    $("#showAll")?.addEventListener("click", () => { st.showAll = true; drawMap(); });
+    const qi = $("#areaQ");
+    if(qi) qi.addEventListener("input", () => { const pos = qi.selectionStart; st.q = qi.value; drawMap(); const n = $("#areaQ"); n.focus(); n.setSelectionRange(pos, pos); });
   }
 
   document.querySelectorAll(".viewtoggle button").forEach(b => b.onclick = () => { st.view = b.dataset.v; render(); });

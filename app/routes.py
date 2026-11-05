@@ -1,6 +1,7 @@
-"""Pages: start, upload, check, score, tree (with map) and export."""
+"""Pages: start, upload, check, score, tree (with the by-area table) and export."""
 import io
 import os
+import re
 
 from flask import (Blueprint, abort, current_app, jsonify, redirect, render_template, request, send_file,
                    url_for)
@@ -9,7 +10,7 @@ from . import current_user, lists, storage
 from .export.word import build_docx
 from .tree.rules import BANDS, HIGH_RISK, apply_edits, build_tree, hazards_present, risk_band
 from .workbook.checks import check_events
-from .workbook.columns import MONTHS
+from .workbook.columns import MONTHS, split_list
 from .workbook.reader import read_workbook
 from .workbook.template import build_template
 
@@ -49,9 +50,35 @@ def load(tree_id):
     tree = storage.get_tree(tree_id)
     if not tree:
         abort(404)
-    tree["setup"] = lists.country_setup(tree["country"]) or {}
+    setup = lists.setup_for(tree["country"])
+    if tree["data"].get("area_label"):
+        setup["area_label"] = tree["data"]["area_label"]
+    tree["setup"] = setup
     tree["type"] = TREE_TYPES[tree["tree_type"]]
     return tree
+
+
+def area_list(tree):
+    """The areas this tree is counted against, and where the list came from (workbook, app or events)."""
+    d = tree["data"]
+    if d.get("areas"):
+        return d["areas"], d.get("area_source", "workbook")
+    return [a["name"] for a in tree["setup"].get("areas", [])], "app"
+
+
+def clean_label(text):
+    """The word for one area, as typed on the start page ("Province" becomes "province")."""
+    text = re.sub(r"[^A-Za-zÀ-ÿ' -]", "", text or "").strip().lower()[:30]
+    if len(text) > 4 and text.endswith("ies"):
+        return text[:-3] + "y"
+    return text[:-1] if len(text) > 3 and text.endswith("s") and not text.endswith(("ss", "us")) else text
+
+
+def plural_word(word):
+    """oblast -> oblasts, county -> counties."""
+    if re.search(r"[^aeiou]y$", word):
+        return word[:-1] + "ies"
+    return word + "es" if re.search(r"(s|sh|ch|x|z)$", word) else word + "s"
 
 
 def reached(tree):
@@ -70,7 +97,7 @@ def page(template, tree=None, step=None, **kw):
 
 def view_for(tree):
     d = tree["data"]
-    t = build_tree(d.get("events", []), d.get("scores", {}), tree["country"])
+    t = build_tree(d.get("events", []), d.get("scores", {}), tree["country"], tree["setup"]["area_label"])
     if not t:
         return None
     return apply_edits(t, d.get("edits", {}), d.get("out", {}), d.get("manual", {}))
@@ -92,15 +119,18 @@ def start():
 @bp.post("/start")
 def start_post():
     country, tree_type = request.form.get("country", ""), request.form.get("tree_type", "risk")
-    if not lists.country_setup(country) or not TREE_TYPES.get(tree_type, {}).get("available"):
-        abort(400, "This country or type of tree is not set up yet.")
+    if not lists.is_country(country) or not TREE_TYPES.get(tree_type, {}).get("available"):
+        abort(400, "Choose a country from the list and a type of tree that is available.")
     tree_id = storage.create_tree(country, tree_type, current_user())
+    label = clean_label(request.form.get("area_label"))
+    if label and not lists.country_setup(country):
+        storage.save_data(tree_id, {"area_label": label})
     return redirect(url_for("main.upload", tree_id=tree_id))
 
 
 @bp.get("/template/<country>.xlsx")
 def template(country):
-    if not lists.country_setup(country):
+    if not lists.is_country(country):
         abort(404)
     return send_file(io.BytesIO(build_template(country)), as_attachment=True,
                      download_name=f"Hazard_list_template_{lists.slug(country)}.xlsx",
@@ -120,14 +150,27 @@ def upload(tree_id):
 def _process(tree, filename, content):
     result = read_workbook(content, tree["setup"]["area_column"])
     data = tree["data"]
-    for key in ("events", "left_out", "issues", "total", "problem"):
+    for key in ("events", "left_out", "issues", "total", "problem", "areas", "area_source"):
         data.pop(key, None)
     data["file"] = filename
     if result.problem:
         data["problem"] = result.problem
     else:
-        used, left_out, issues = check_events(result.events, tree["country"])
-        data.update(events=used, left_out=[e["_row"] for e in left_out], issues=issues, total=len(result.events))
+        # Which areas to count against: the list in tab Lists of the workbook, else the list built into the
+        # app for this country, else the names typed in tab 3 (checked for near-duplicate spellings).
+        built_in = lists.area_names(tree["country"])
+        if result.areas:
+            areas, source = result.areas, "workbook"
+        elif built_in:
+            areas, source = built_in, "app"
+        else:
+            seen = []
+            for e in result.events:
+                seen += [a for a in split_list(e.get("areas")) if a.lower() != "national" and a not in seen]
+            areas, source = seen, "events"
+        used, left_out, issues = check_events(result.events, tree["country"], areas=areas, strict=source != "events")
+        data.update(events=used, left_out=[e["_row"] for e in left_out], issues=issues, total=len(result.events),
+                    areas=areas, area_source=source)
     storage.add_upload(tree["id"], filename, current_user(), content)
     storage.save_data(tree["id"], data)
 
@@ -158,7 +201,10 @@ def check(tree_id):
     tree = load(tree_id)
     d = tree["data"]
     warn_rows = {r["row"] for g in d.get("issues", []) if g["level"] == "warning" for r in g["rows"]}
-    return page("check.html", tree, 2, warn_rows=len(warn_rows))
+    areas, source = area_list(tree)
+    label = tree["setup"]["area_label"]
+    return page("check.html", tree, 2, warn_rows=len(warn_rows), areas=areas, area_source=source,
+                area_word=label if len(areas) == 1 else plural_word(label))
 
 
 # ---------- scores ----------
@@ -196,7 +242,8 @@ def tree_payload(tree):
         "view": view_for(tree),
         "events": [{k: e.get(k) for k in ("_row", "year", "start", "type", "sub", "areas", "killed", "affected",
                                           "displaced", "houses")} for e in events],
-        "tiles": tree["setup"].get("areas", []),
+        "areas": area_list(tree)[0],
+        "cities": [a["name"] for a in tree["setup"].get("areas", []) if a.get("city")],
         "areaLabel": tree["setup"].get("area_label", "area"),
         "months": MONTHS,
         "editUrl": url_for("main.edit", tree_id=tree["id"]),

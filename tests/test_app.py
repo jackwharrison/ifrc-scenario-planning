@@ -52,8 +52,12 @@ class AppFlowTests(unittest.TestCase):
         r = self.client.post("/start", data={"country": "Kyrgyzstan", "tree_type": "risk"})
         self.assertEqual(r.status_code, 400)
 
-    def test_country_not_set_up(self):
+    def test_country_without_area_list_can_start(self):
         r = self.client.post("/start", data={"csrf": self.csrf, "country": "Lithuania", "tree_type": "risk"})
+        self.assertEqual(r.status_code, 302)
+
+    def test_crisis_type_not_available(self):
+        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Kyrgyzstan", "tree_type": "crisis"})
         self.assertEqual(r.status_code, 400)
 
     def test_template_download(self):

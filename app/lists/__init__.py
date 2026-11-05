@@ -61,10 +61,27 @@ def country_setup(country):
         return yaml.safe_load(f)
 
 
+# Used for any country without a set-up file. The National Society lists its own areas in tab Lists
+# of the workbook, or the app takes the names typed in tab 3.
+GENERIC_SETUP = {"area_column": "Areas", "area_label": "area", "areas": []}
+
+
+def is_country(name):
+    return any(c["name"] == name for c in countries())
+
+
+def setup_for(country):
+    """The set-up file for a country, or the generic set-up when the country has none."""
+    setup = country_setup(country)
+    if setup:
+        return {**GENERIC_SETUP, **setup, "prefilled": True}
+    return {**GENERIC_SETUP, "country": country, "prefilled": False}
+
+
 def ready_countries():
+    """Countries whose area list is built into the app. Every other country can still be used."""
     return [c["name"] for c in countries() if country_setup(c["name"])]
 
 
 def area_names(country):
-    setup = country_setup(country) or {}
-    return [a["name"] for a in setup.get("areas", [])]
+    return [a["name"] for a in setup_for(country).get("areas", [])]

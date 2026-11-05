@@ -24,6 +24,11 @@
     <div class="stat warn"><b>{{ warn_rows }}</b><span>rows with warnings</span></div>
     <div class="stat err"><b>{{ d.left_out|length }}</b><span>left out (errors)</span></div>
   </div>
+  <p class="area-source"><b>{{ areas|length }} {{ area_word }}</b>
+  {% if area_source == 'workbook' %}from tab Lists of this workbook.
+  {% elif area_source == 'app' %}from the list built into the app for {{ tree.country }}. To use other names, list them in tab Lists of the workbook.
+  {% else %}taken from the names typed in tab 3, because tab Lists has none. Check below for names that look alike.{% endif %}
+  {% if areas %}<span class="area-names">{{ areas|join(', ') }}</span>{% endif %}</p>
   <div class="issues">
   {% for g in d.issues %}
     <details class="issue {{ g.level }}"><summary><strong>{{ g.title }}</strong><span class="cnt">{{ g.rows|length }} row{{ 's' if g.rows|length != 1 }}</span><span class="fix">{% if g.level == 'error' %}Error, row left out. {% endif %}{{ g.fix }}</span></summary>

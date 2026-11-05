@@ -6,11 +6,11 @@ The app counts what can be counted and shows how it did it. Everything that need
 
 ## How it works
 
-1. **Start.** Choose the country and the type of tree. Only countries with a set-up file can be used (see "Adding a country").
+1. **Start.** Choose the country and the type of tree. Every country can be used (see "Areas and countries").
 2. **Upload.** Upload the completed workbook. The app reads tab 3, the hazard list, by column name.
 3. **Check.** Every row is checked. Rows with errors are left out; warnings are listed with row numbers so they can be fixed in Excel.
 4. **Score risks.** The analyst sets likelihood and impact for each hazard. Scores of 16 or more become priority hazards.
-5. **Review tree.** Boxes marked Automatic are written from the counts, each line with the rule and rows behind it. Boxes marked Needs you are written by hand. A Map view shows events per area, with filters by hazard type.
+5. **Review tree.** Boxes marked Automatic are written from the counts, each line with the rule and rows behind it. Boxes marked Needs you are written by hand. A "By area" view (By oblast, By province...) shows a table of events per area and hazard type, with filters.
 6. **Export.** Download the Word document and save a version.
 
 Uploading a newer workbook keeps the scores, edited wording and hand-written lines.
@@ -23,7 +23,7 @@ app/
   routes.py            the pages and the small edit API used by the tree page
   storage.py           SQLite storage for trees, uploads and saved versions
   lists/               plain YAML lists: hazard types, sectors, factors, countries
-    areas/             one file per country that is set up (areas, P-codes, map layout)
+    areas/             optional: built-in area lists for some countries (names, P-codes)
   workbook/            reading tab 3, the row checks, and the blank template generator
   tree/rules.py        the counting rules that write the tree
   export/word.py       the Word document
@@ -122,17 +122,32 @@ Decide early whose accounts may sign in (your National Society only, or IFRC and
 
 Open `https://<your-app>.azurewebsites.net/health`. It should show `{"status": "ok"}`.
 
-## Adding a country
+## Areas and countries
 
-A country is ready when it has a file in `app/lists/areas/`. Copy `kyrgyzstan.yaml`, rename it after the country (lower case, spaces as hyphens, for example `south-sudan.yaml`) and change:
+Every country in `countries.yaml` can be used. No map or boundary files are needed: events are counted per area in a table, so the app only needs the area names.
+
+The app decides which areas to count against when a workbook is uploaded, in this order:
+
+1. **Tab Lists of the uploaded workbook.** The column with the same header as the area column in tab 3 (`Areas` in the generic template). This lets a National Society use its own names, or another level, without changing the app.
+2. **A built-in list** in `app/lists/areas/` for that country, if there is one.
+3. **The names typed in tab 3.** Nothing is rejected, but names that look alike ("Jalal-Abad", "Jalalabad") get a warning so they can be made consistent.
+
+With 1 and 2, a name in tab 3 that is not on the list is an error and the row is left out. The Check page says which list was used.
+
+On the Start page, for a country without a built-in list, the user can say what the areas are called (province, region, district...). That word is used in the tree and the area table.
+
+The area table copes with long lists: above 15 areas it shows a search box, the 20 areas with most events (with "Show all"), and lists the areas without events in one line.
+
+### Adding a built-in area list (optional)
+
+A built-in list pre-fills tab Lists of the template and names the area column. Copy `kyrgyzstan.yaml`, rename it after the country (lower case, spaces as hyphens, for example `south-sudan.yaml`) and change:
 
 - `area_column`: the header of the area column in the workbook, for example `Regions`.
 - `area_label`: how one area is called in sentences, for example `region`.
-- `areas`: one entry per first-level area, with its name and P-code. Take both from the OCHA administrative boundaries for that country on HDX (search HDX for the country name and "subnational administrative boundaries"). Do not type P-codes from memory.
-- `tile`: the position of each area in the schematic map, as `[row, column]` in a grid of 4 columns.
+- `areas`: one entry per first-level area. `pcode` is optional; if you add it, take it from the OCHA administrative boundaries for that country on HDX. Do not type P-codes from memory. `city: true` adds "city" after the name in the table.
 - `example_workbook` (optional): a file in `samples/` offered on the upload page.
 
-The blank template for the country is generated automatically from these lists, so its dropdowns always match what the app accepts.
+The blank template for the country is generated from these lists, so its dropdowns match what the app accepts. Workbooks made from the generic template (column `Areas`) are accepted for every country, including ones with a built-in list.
 
 ## Changing the lists
 
@@ -153,7 +168,8 @@ Back up the database by downloading `/home/data/app.db` through the web app's "A
 ## Known limitations and next steps
 
 - **Crisis analysis** (for example Sudan) is shown on the start page but not built yet. It needs a second sheet in the workbook for current figures, and rules that flag figures older than three months.
-- **The map is schematic**: a grid of boxes, not real boundaries. To use real boundaries, fill in the P-codes, add a simplified boundary file per country under `app/static/geo/`, and draw it with a library such as Leaflet, joining on P-code.
+- **No geographic map**, on purpose: the area table works for every country from names alone. A map would need P-codes and boundary files per country.
+- **Built-in area lists** exist only for Kyrgyzstan. Pre-filling every country (names from OCHA or geoBoundaries) is a one-off data job; until then, National Societies list their areas in tab Lists.
 - **The Kyrgyzstan example** was standardised by hand from the original hazard list. Some choices (which oblast, death tolls that include neighbouring countries) are judgement calls; check the figures before relying on them.
 - **The Word document** is built in code (`app/export/word.py`). If colleagues want to change the layout in Word themselves, it can be switched to a Word template filled with `docxtpl`.
 - **Fonts** load from Google Fonts. If your network blocks that, the app falls back to system fonts; you can also download the fonts into `app/static/`.
