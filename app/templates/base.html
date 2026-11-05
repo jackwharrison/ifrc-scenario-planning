@@ -8,12 +8,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" sizes="any">
+<link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
 <meta name="csrf-token" content="{{ csrf_token }}">
 </head>
 <body>
 <header class="top">
   <a class="logo" href="{{ url_for('main.home') }}"><img alt="IFRC" src="{{ url_for('static', filename='img/ifrc-logo.png') }}"></a>
-  <a class="app applink" href="{{ url_for('main.home') }}"><strong>Problem tree builder</strong><span>Anticipatory risk analysis</span></a>
+  <a class="app applink" href="{{ url_for('main.home') }}"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect class="m-p" x="10" y="1" width="12" height="5.5" rx="1.5"/><rect class="m-c" x="6" y="8" width="20" height="5.5" rx="1.5"/><rect class="m-i" x="2" y="15" width="28" height="5.5" rx="1.5"/><rect class="m-s" x="13" y="20.5" width="6" height="5.5"/><rect class="m-x" x="0.5" y="26" width="31" height="5" rx="1.5"/></svg><div class="apptext"><strong>Problem tree builder</strong><span>Anticipatory risk analysis</span></div></a>
   <span class="spacer"></span>
   <nav class="navlinks" aria-label="Main">
     <a href="{{ url_for('main.home') }}">All trees</a>

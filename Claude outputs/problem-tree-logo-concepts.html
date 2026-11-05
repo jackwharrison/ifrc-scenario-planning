@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Problem Tree Logos</title>
+<style>
+  :root { --bg:#f6f5f2; --card:#fff; --ink:#1d1d1f; --muted:#6b6b70; --red:#c8102e; --grey:#4a4f57; --line:#e3e1dc; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:1080px; margin:0 auto; padding:32px 16px 48px; }
+  h1 { font-size:24px; margin:0 0 6px; }
+  .lede { color:var(--muted); margin:0 0 28px; max-width:70ch; line-height:1.5; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .stage { height:200px; display:flex; align-items:center; justify-content:center; gap:22px; padding:20px; }
+  .stage.dark { background:#1f2329; }
+  .stage svg { max-height:150px; }
+  .small { display:flex; gap:14px; align-items:center; padding:10px 20px; border-top:1px solid var(--line); background:#fbfaf8; }
+  .small svg { width:32px; height:32px; }
+  .small svg.xs { width:18px; height:18px; }
+  .small span { font-size:12px; color:var(--muted); margin-left:auto; }
+  .txt { padding:14px 20px 18px; border-top:1px solid var(--line); }
+  .txt h2 { font-size:16px; margin:0 0 6px; }
+  .txt p { font-size:14px; color:var(--muted); margin:0; line-height:1.45; }
+  .note { margin-top:28px; font-size:13px; color:var(--muted); line-height:1.5; border-left:3px solid var(--red); padding-left:12px; max-width:80ch; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Problem Tree Builder — logo concepts</h1>
+  <p class="lede">Six directions, each shown large, on dark, and at favicon sizes (32px and 18px). Colours use a deep red and slate grey so they sit comfortably next to IFRC branding without copying it.</p>
+
+  <div class="grid">
+
+    <!-- 1 Node tree -->
+    <div class="card">
+      <div class="stage">
+        <svg viewBox="0 0 120 120" width="150" height="150" aria-label="Node tree">
+          <g stroke="#4a4f57" stroke-width="5" stroke-linecap="round" fill="none">
+            <path d="M60 104 V62"/><path d="M60 62 L32 36"/><path d="M60 62 L88 36"/><path d="M60 62 V24"/>
+            <path d="M60 104 L42 114"/><path d="M60 104 L78 114"/>
+          </g>
+          <circle cx="32" cy="34" r="10" fill="#c8102e"/><circle cx="88" cy="34" r="10" fill="#c8102e"/><circle cx="60" cy="20" r="11" fill="#c8102e"/>
+          <circle cx="60" cy="62" r="7" fill="#4a4f57"/>
+        </svg>
+      </div>
+      <div class="small">
+        <svg viewBox="0 0 120 120"><g stroke="#4a4f57" stroke-width="9" stroke-linecap="round" fill="none"><path d="M60 108 V62"/><path d="M60 62 L32 36"/><path d="M60 62 L88 36"/><path d="M60 62 V24"/></g><circle cx="32" cy="34" r="14" fill="#c8102e"/><circle cx="88" cy="34" r="14" fill="#c8102e"/><circle cx="60" cy="20" r="15" fill="#c8102e"/></svg>
+        <svg class="xs" viewBox="0 0 120 120"><g stroke="#4a4f57" stroke-width="12" stroke-linecap="round" fill="none"><path d="M60 110 V62"/><path d="M60 62 L30 36"/><path d="M60 62 L90 36"/></g><circle cx="30" cy="32" r="18" fill="#c8102e"/><circle cx="90" cy="32" r="18" fill="#c8102e"/></svg>
+        <span>32px · 18px</span>
+      </div>
+      <div class="txt"><h2>1. Node tree</h2><p>A trunk splitting into branches that end in data points: causes at the roots, effects at the top. Reads as both a tree and a network diagram.</p></div>
+    </div>
+
+    <!-- 2 Layered bands -->
+    <div class="card">
+      <div class="stage">
+        <svg viewBox="0 0 120 120" width="150" height="150" aria-label="Layered bands">
+          <rect x="44" y="12" width="32" height="14" rx="4" fill="#c8102e"/>
+          <rect x="32" y="32" width="56" height="14" rx="4" fill="#c8102e" opacity=".8"/>
+          <rect x="20" y="52" width="80" height="14" rx="4" fill="#c8102e" opacity=".6"/>
+          <rect x="54" y="72" width="12" height="16" fill="#4a4f57"/>
+          <rect x="10" y="92" width="100" height="14" rx="4" fill="#4a4f57"/>
+        </svg>
+      </div>
+      <div class="small">
+        <svg viewBox="0 0 120 120"><rect x="40" y="10" width="40" height="20" rx="5" fill="#c8102e"/><rect x="22" y="38" width="76" height="20" rx="5" fill="#c8102e" opacity=".7"/><rect x="52" y="58" width="16" height="22" fill="#4a4f57"/><rect x="8" y="84" width="104" height="22" rx="5" fill="#4a4f57"/></svg>
+        <svg class="xs" viewBox="0 0 120 120"><rect x="30" y="8" width="60" height="30" rx="6" fill="#c8102e"/><rect x="50" y="38" width="20" height="40" fill="#4a4f57"/><rect x="6" y="80" width="108" height="32" rx="6" fill="#4a4f57"/></svg>
+        <span>32px · 18px</span>
+      </div>
+      <div class="txt"><h2>2. Layered bands</h2><p>The five layers of the tree (Context, Shock, Impact, Conditions, Priorities) stacked into a tree silhouette. Closest to how the output document is laid out.</p></div>
+    </div>
+
+    <!-- 3 Box diagram -->
+    <div class="card">
+      <div class="stage">
+        <svg viewBox="0 0 120 120" width="150" height="150" aria-label="Box diagram">
+          <g fill="none" stroke="#4a4f57" stroke-width="4"><path d="M60 40 V54 M24 54 H96 M24 54 V66 M60 54 V66 M96 54 V66 M60 86 V96"/></g>
+          <rect x="38" y="14" width="44" height="26" rx="5" fill="#c8102e"/>
+          <rect x="8" y="66" width="32" height="20" rx="4" fill="#fff" stroke="#4a4f57" stroke-width="4"/>
+          <rect x="44" y="66" width="32" height="20" rx="4" fill="#fff" stroke="#4a4f57" stroke-width="4"/>
+          <rect x="80" y="66" width="32" height="20" rx="4" fill="#fff" stroke="#4a4f57" stroke-width="4"/>
+          <rect x="44" y="96" width="32" height="14" rx="4" fill="#4a4f57"/>
+        </svg>
+      </div>
+      <div class="small">
+        <svg viewBox="0 0 120 120"><g fill="none" stroke="#4a4f57" stroke-width="7"><path d="M60 44 V58 M22 58 H98 M22 58 V70 M98 58 V70"/></g><rect x="34" y="10" width="52" height="34" rx="6" fill="#c8102e"/><rect x="4" y="70" width="38" height="30" rx="5" fill="#4a4f57"/><rect x="78" y="70" width="38" height="30" rx="5" fill="#4a4f57"/></svg>
+        <svg class="xs" viewBox="0 0 120 120"><g fill="none" stroke="#4a4f57" stroke-width="10"><path d="M60 48 V62 M22 62 H98 M22 62 V74 M98 62 V74"/></g><rect x="30" y="8" width="60" height="40" rx="8" fill="#c8102e"/><rect x="2" y="74" width="42" height="38" rx="7" fill="#4a4f57"/><rect x="76" y="74" width="42" height="38" rx="7" fill="#4a4f57"/></svg>
+        <span>32px · 18px</span>
+      </div>
+      <div class="txt"><h2>3. Box diagram</h2><p>A miniature problem tree: one core problem fanning out to its causes. Most literal; instantly familiar to workshop facilitators.</p></div>
+    </div>
+
+    <!-- 4 Hazard triangle -->
+    <div class="card">
+      <div class="stage">
+        <svg viewBox="0 0 120 120" width="150" height="150" aria-label="Hazard triangle">
+          <path d="M60 10 L112 104 H8 Z" fill="none" stroke="#c8102e" stroke-width="8" stroke-linejoin="round"/>
+          <g stroke="#4a4f57" stroke-width="5" stroke-linecap="round" fill="none"><path d="M60 92 V58 M60 70 L46 56 M60 70 L74 56 M60 60 L52 48 M60 60 L68 48"/></g>
+        </svg>
+        <svg viewBox="0 0 120 120" width="110" height="110" style="background:#1f2329;border-radius:20px" aria-label="App icon">
+          <path d="M60 18 L104 96 H16 Z" fill="none" stroke="#ff4d5e" stroke-width="7" stroke-linejoin="round"/>
+          <g stroke="#e8e8e8" stroke-width="5" stroke-linecap="round" fill="none"><path d="M60 86 V58 M60 68 L48 56 M60 68 L72 56"/></g>
+        </svg>
+      </div>
+      <div class="small">
+        <svg viewBox="0 0 120 120"><path d="M60 10 L112 106 H8 Z" fill="none" stroke="#c8102e" stroke-width="12" stroke-linejoin="round"/><g stroke="#4a4f57" stroke-width="9" stroke-linecap="round" fill="none"><path d="M60 92 V60 M60 72 L44 56 M60 72 L76 56"/></g></svg>
+        <svg class="xs" viewBox="0 0 120 120"><path d="M60 8 L114 108 H6 Z" fill="#c8102e"/><g stroke="#fff" stroke-width="12" stroke-linecap="round" fill="none"><path d="M60 94 V62 M60 74 L44 58 M60 74 L76 58"/></g></svg>
+        <span>32px · 18px</span>
+      </div>
+      <div class="txt"><h2>4. Hazard triangle</h2><p>A warning triangle with a sapling inside: hazards in, analysis out. Signals disaster risk clearly, but is less specific to problem trees.</p></div>
+    </div>
+
+    <!-- 5 Roots & canopy -->
+    <div class="card">
+      <div class="stage">
+        <svg viewBox="0 0 120 120" width="150" height="150" aria-label="Roots and canopy">
+          <circle cx="60" cy="38" r="30" fill="#c8102e"/>
+          <rect x="56" y="58" width="8" height="30" fill="#4a4f57"/>
+          <line x1="10" y1="88" x2="110" y2="88" stroke="#4a4f57" stroke-width="3"/>
+          <g stroke="#4a4f57" stroke-width="4" stroke-linecap="round" fill="none"><path d="M60 88 V112 M60 92 Q44 98 34 112 M60 92 Q76 98 86 112 M60 96 Q50 104 48 112 M60 96 Q70 104 72 112"/></g>
+        </svg>
+      </div>
+      <div class="small">
+        <svg viewBox="0 0 120 120"><circle cx="60" cy="38" r="32" fill="#c8102e"/><rect x="54" y="58" width="12" height="30" fill="#4a4f57"/><g stroke="#4a4f57" stroke-width="8" stroke-linecap="round" fill="none"><path d="M60 88 V112 M60 92 Q40 100 30 112 M60 92 Q80 100 90 112"/></g></svg>
+        <svg class="xs" viewBox="0 0 120 120"><circle cx="60" cy="40" r="36" fill="#c8102e"/><rect x="52" y="62" width="16" height="50" fill="#4a4f57"/></svg>
+        <span>32px · 18px</span>
+      </div>
+      <div class="txt"><h2>5. Roots &amp; canopy</h2><p>The classic problem-tree teaching image: visible effects above ground, root causes below the line. Warm and approachable.</p></div>
+    </div>
+
+    <!-- 6 Wordmark -->
+    <div class="card">
+      <div class="stage">
+        <svg viewBox="0 0 260 90" width="260" height="90" aria-label="Wordmark">
+          <g stroke="#4a4f57" stroke-width="4" stroke-linecap="round" fill="none"><path d="M30 78 V44 M30 54 L16 38 M30 54 L44 38"/></g>
+          <circle cx="16" cy="34" r="7" fill="#c8102e"/><circle cx="44" cy="34" r="7" fill="#c8102e"/><circle cx="30" cy="22" r="8" fill="#c8102e"/>
+          <text x="62" y="46" font-family="system-ui, Segoe UI, sans-serif" font-size="26" font-weight="700" fill="#1d1d1f">Problem Tree</text>
+          <text x="63" y="70" font-family="system-ui, Segoe UI, sans-serif" font-size="13" letter-spacing="3.5" fill="#6b6b70">SCENARIO BUILDER</text>
+        </svg>
+      </div>
+      <div class="stage dark" style="height:120px">
+        <svg viewBox="0 0 260 90" width="230" height="80" aria-label="Wordmark on dark">
+          <g stroke="#c9ccd1" stroke-width="4" stroke-linecap="round" fill="none"><path d="M30 78 V44 M30 54 L16 38 M30 54 L44 38"/></g>
+          <circle cx="16" cy="34" r="7" fill="#ff4d5e"/><circle cx="44" cy="34" r="7" fill="#ff4d5e"/><circle cx="30" cy="22" r="8" fill="#ff4d5e"/>
+          <text x="62" y="46" font-family="system-ui, Segoe UI, sans-serif" font-size="26" font-weight="700" fill="#fff">Problem Tree</text>
+          <text x="63" y="70" font-family="system-ui, Segoe UI, sans-serif" font-size="13" letter-spacing="3.5" fill="#aeb2b8">SCENARIO BUILDER</text>
+        </svg>
+      </div>
+      <div class="txt"><h2>6. Wordmark lock-up</h2><p>Concept 1 paired with the name, for the app header and the cover of the exported Word document.</p></div>
+    </div>
+
+  </div>
+
+  <p class="note">None of these use a cross or crescent shape. The Red Cross and Red Crescent emblems are protected under the Geneva Conventions, so the app's own mark should stay clearly distinct from them; the official IFRC logo can still appear alongside it where branding rules allow (as it already does in the Word export).</p>
+</main>
+</body>
+</html>

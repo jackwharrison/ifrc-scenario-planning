@@ -40,6 +40,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .app{display:flex;flex-direction:column;line-height:1.2}
 .app strong{font-family:Montserrat,sans-serif;font-size:1rem}
 .app span{font-size:.82rem;color:var(--muted)}
+.applink{flex-direction:row;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.apptext{display:flex;flex-direction:column}
+.mark{width:22px;height:22px;flex:none;opacity:.9}
+.mark .m-p{fill:var(--c-priorities)}.mark .m-c{fill:var(--c-conditions)}.mark .m-i{fill:var(--c-impact)}.mark .m-s{fill:var(--c-shock)}.mark .m-x{fill:var(--c-context)}
 .top .spacer{flex:1}
 .country{font-weight:600;font-size:.85rem;border:1px solid var(--line);border-radius:999px;padding:3px 11px}
 
