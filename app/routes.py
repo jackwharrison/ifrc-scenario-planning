@@ -100,6 +100,13 @@ def home():
     return page("home.html", trees=storage.list_trees(), latest=storage.latest_uploads())
 
 
+@bp.post("/trees/<int:tree_id>/delete")
+def delete_tree(tree_id):
+    tree = load(tree_id)
+    storage.delete_tree(tree_id)
+    return redirect(url_for("main.home", deleted=tree["country"]))
+
+
 @bp.get("/trees/<int:tree_id>/uploads/<int:upload_id>")
 def download_upload(tree_id, upload_id):
     """Download a workbook exactly as it was uploaded, so others can see what a tree was built from."""

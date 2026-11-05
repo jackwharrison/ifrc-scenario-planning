@@ -489,3 +489,35 @@ table.season thead th:first-child{position:sticky;left:0;z-index:1;background:va
   /* Event tables: keep the row name in view while scrolling sideways */
   .otab th[scope="row"]{position:sticky;left:0;z-index:1;background:var(--surface)}
 }
+/* Home: sortable list and delete */
+.sort-bar{display:none;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:.88rem}
+.sort-bar label{color:var(--muted)}
+.sort-bar select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit}
+.sort-dir{padding:6px 12px;font-size:.88rem;white-space:nowrap}
+.th-sort{all:unset;cursor:pointer;display:inline-flex;vertical-align:bottom;align-items:center;gap:4px;font-weight:inherit;color:inherit}
+.th-sort:hover{color:var(--ink)}
+.th-sort:focus-visible{outline:2px solid var(--red);outline-offset:2px;border-radius:2px}
+.th-sort .sort-ico{display:inline-block;width:.8em;height:auto;padding:0;color:var(--muted);font-size:.8em}
+th[aria-sort="none"] .th-sort:hover .sort-ico::after{content:"↕"}
+th[aria-sort="ascending"] .sort-ico::after{content:"↑";color:var(--ink)}
+th[aria-sort="descending"] .sort-ico::after{content:"↓";color:var(--ink)}
+th[aria-sort="ascending"],th[aria-sort="descending"]{color:var(--ink)}
+th.num .th-sort{flex-direction:row-reverse}
+.del-col{width:44px;text-align:right}
+.del-form{margin:0}
+.del-btn{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer}
+.del-btn:hover,.del-btn:focus-visible{color:var(--red-ink);border-color:var(--red);background:color-mix(in srgb,var(--red) 8%,transparent);outline:none}
+.btn.danger{background:var(--red-ink);border-color:var(--red-ink);color:#FFFFFF}
+.btn.danger:hover{filter:brightness(.92)}
+dialog.confirm{border:1px solid var(--line);border-radius:10px;padding:22px 24px;max-width:440px;width:calc(100% - 32px);background:var(--surface);color:var(--ink);box-shadow:0 12px 40px rgba(0,0,0,.25)}
+dialog.confirm::backdrop{background:rgba(20,20,22,.45)}
+dialog.confirm h2{margin:0 0 10px;font-size:1.15rem;overflow-wrap:anywhere}
+dialog.confirm p{margin:0 0 10px;font-size:.92rem;line-height:1.5}
+dialog.confirm .warn{color:var(--red-ink);font-weight:600}
+dialog.confirm .btn-row{justify-content:flex-end;margin-top:16px}
+@media (max-width:720px){
+  .sort-bar{display:flex}
+  table.trees tr{position:relative}
+  table.trees td.del-col{position:absolute;top:8px;right:8px;width:auto}
+  table.trees td[data-label="Country"]{padding-right:40px}
+}

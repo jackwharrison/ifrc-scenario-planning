@@ -117,6 +117,27 @@ class AppFlowTests(unittest.TestCase):
         self.assertNotIn("local user", page)
         self.assertNotIn(" by ", page.split("wb-meta")[1][:80])
 
+    def test_tree_can_be_deleted_with_its_uploads(self):
+        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Kyrgyzstan"})
+        tree_url = r.headers["Location"].rsplit("/", 1)[0]
+        self.client.post(tree_url + "/upload", data={"csrf": self.csrf, "workbook": (io.BytesIO(example_bytes()), "kg.xlsx")},
+                         content_type="multipart/form-data")
+        keep = self.client.post("/start", data={"csrf": self.csrf, "country": "Georgia"}).headers["Location"]
+        home = self.client.get("/").get_data(as_text=True)
+        self.assertIn('action="%s/delete"' % tree_url, home)
+        upload = re.search(r'href="(/trees/\d+/uploads/\d+)"', home).group(1)
+        # Without the form token nothing is deleted
+        self.assertEqual(self.client.post(tree_url + "/delete").status_code, 400)
+        r = self.client.post(tree_url + "/delete", data={"csrf": self.csrf})
+        self.assertEqual(r.status_code, 302)
+        home = self.client.get(r.headers["Location"]).get_data(as_text=True)
+        self.assertIn("Kyrgyzstan was deleted.", home)
+        self.assertIn("Georgia", home)
+        self.assertEqual(self.client.get(tree_url + "/tree").status_code, 404)
+        self.assertEqual(self.client.get(upload).status_code, 404)
+        self.assertEqual(self.client.post(tree_url + "/delete", data={"csrf": self.csrf}).status_code, 404)
+        self.assertEqual(self.client.get(keep).status_code, 200)
+
     def test_post_without_token_is_refused(self):
         r = self.client.post("/start", data={"country": "Kyrgyzstan"})
         self.assertEqual(r.status_code, 400)

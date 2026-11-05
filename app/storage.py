@@ -93,6 +93,16 @@ def list_trees():
     return [_tree(r) for r in db().execute("SELECT * FROM trees ORDER BY updated_at DESC").fetchall()]
 
 
+def delete_tree(tree_id):
+    """Removes a tree with its uploaded workbooks and saved versions. Cannot be undone."""
+    con = db()
+    con.execute("DELETE FROM uploads WHERE tree_id = ?", (tree_id,))
+    con.execute("DELETE FROM versions WHERE tree_id = ?", (tree_id,))
+    deleted = con.execute("DELETE FROM trees WHERE id = ?", (tree_id,)).rowcount
+    con.commit()
+    return deleted > 0
+
+
 def save_data(tree_id, data):
     db().execute("UPDATE trees SET data = ?, updated_at = ? WHERE id = ?", (json.dumps(data), now(), tree_id))
     db().commit()
