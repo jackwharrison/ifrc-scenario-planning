@@ -42,7 +42,7 @@
   <form method="post" action="{{ url_for('main.save_version', tree_id=tree.id) }}" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button type="submit" class="btn">Save as version</button></form></div>
 </div></section>
 <section class="card"><div class="card-head"><h2>Saved versions</h2></div><div class="card-body">
-  {% if versions %}<ul class="versions">{% for v in versions %}<li>{{ v.saved_at }}, {{ v.saved_by }}</li>{% endfor %}</ul>{% else %}<p class="muted">None yet.</p>{% endif %}
+  {% if versions %}<ul class="versions">{% for v in versions %}<li>{{ v.saved_at }}{% if v.saved_by %}, {{ v.saved_by }}{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">None yet.</p>{% endif %}
 </div></section></div>
 </div>
 {% endblock %}

@@ -27,6 +27,8 @@
       <input id="areaLabel" name="area_label" type="text" maxlength="30" placeholder="For example province, region, district or state" style="max-width:380px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
       <span class="combo-status">Used in the tree and the area table. Leave empty to say “area”.</span></div>
     {% endif %}
+    <div class="field name-field"><label for="yourName"><span style="font-weight:600;font-size:.9rem">Your name</span> <span class="muted" style="font-size:.85rem">(optional)</span></label>
+      <input id="yourName" name="your_name" type="text" maxlength="60" autocomplete="name" value="{{ user }}" placeholder="So others can see who uploaded or edited" style="max-width:380px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)"></div>
     <p class="muted" style="margin:0">{{ profile.what }}</p>
   </div></section>
   <section class="card" style="margin-top:16px"><div class="card-head"><h2>2. What you’ll need</h2></div><div class="card-body">

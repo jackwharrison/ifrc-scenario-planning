@@ -23,7 +23,7 @@ The app works on phones: tables turn into cards, the seasonal calendar shows eac
 
 ```
 app/
-  __init__.py          starts the app, security settings, signed-in user
+  __init__.py          starts the app, security settings, the typed name
   routes.py            the pages and the small edit API used by the tree page
   storage.py           SQLite storage for trees, uploads and saved versions
   lists/               plain YAML lists: hazard types, sectors, factors, countries
@@ -117,13 +117,9 @@ gunicorn --bind=0.0.0.0:8000 --workers=1 --threads=4 --timeout=120 wsgi:app
 
 If your organisation does not allow publish profiles, use the web app's "Deployment Center" to connect GitHub instead. It creates its own workflow file; delete `.github/workflows/azure-webapp.yml` so you do not deploy twice.
 
-**5. Sign-in**
+**5. Names, not sign-ins**
 
-- In the web app, open "Authentication", "Add identity provider", "Microsoft".
-- Choose your organisation's tenant and require authentication for every request.
-- Staff then sign in with their normal work account, and the app records their name on uploads, edits and saved versions.
-
-Decide early whose accounts may sign in (your National Society only, or IFRC and partner staff too). That is set in your organisation's Microsoft Entra settings, usually by IT.
+The app has no sign-in. Anyone with the link can use it. People can type their name on the Start or Upload page; it is kept for their browser session and shown on the trees, uploads, lines and versions they add. It is a label, not proof of who someone is. Leave it empty and nothing is shown.
 
 **6. Check it works**
 

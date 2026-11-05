@@ -92,7 +92,7 @@
       });
     }
     h += `<h3>${b.kind === "manual" ? "Written by you" : "Added by you"}</h3>`;
-    if(b.mine.length) b.mine.forEach(m => { h += `<div class="bul"><p class="b-text">${esc(m.text)}</p>${m.by ? `<p class="how">Added by ${esc(m.by)}</p>` : ""}<div class="actions"><button class="act" data-a="remove" data-id="${m.id}">Remove</button></div></div>`; });
+    if(b.mine.length) b.mine.forEach(m => { h += `<div class="bul"><p class="b-text">${esc(m.text)}</p>${m.by && m.by !== "local user" ? `<p class="how">Added by ${esc(m.by)}</p>` : ""}<div class="actions"><button class="act" data-a="remove" data-id="${m.id}">Remove</button></div></div>`; });
     else if(b.kind === "manual") h += `<p class="empty">Nothing here yet.</p>`;
     h += `<div style="margin-top:10px"><label class="ed-note" for="newLine">Add a line</label><textarea id="newLine" placeholder="One finding, with a source if you have one"></textarea><div class="actions"><button class="act go" data-a="add">Add line</button></div></div></div>`;
     $("#editor").innerHTML = h;

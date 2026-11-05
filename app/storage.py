@@ -61,6 +61,10 @@ def close_db(_exc=None):
 def init_db(app):
     with app.app_context():
         db().executescript(SCHEMA)
+        # Before names were typed in, every record said "local user". Clear it so nothing shows.
+        db().execute("UPDATE trees SET created_by = NULL WHERE created_by = 'local user'")
+        db().execute("UPDATE uploads SET uploaded_by = NULL WHERE uploaded_by = 'local user'")
+        db().execute("UPDATE versions SET saved_by = NULL WHERE saved_by = 'local user'")
         db().commit()
     app.teardown_appcontext(close_db)
 

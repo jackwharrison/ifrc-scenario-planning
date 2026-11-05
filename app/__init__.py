@@ -8,8 +8,13 @@ from . import storage
 
 
 def current_user():
-    """Azure App Service authentication passes the signed-in user in this header. Locally there is none."""
-    return request.headers.get("X-MS-CLIENT-PRINCIPAL-NAME", "local user")
+    """The name people type on the Start or Upload page, kept in their session. There are no sign-ins.
+    If Azure sign-in is ever switched on, its header takes priority."""
+    return request.headers.get("X-MS-CLIENT-PRINCIPAL-NAME") or session.get("name", "")
+
+
+def clean_name(value):
+    return " ".join(str(value or "").split())[:60]
 
 
 def create_app(test_config=None):
@@ -40,6 +45,8 @@ def create_app(test_config=None):
             sent = request.form.get("csrf") or request.headers.get("X-CSRF-Token")
             if not token or sent != token:
                 abort(400, "The form expired. Go back, reload the page and try again.")
+            if "your_name" in request.form:
+                session["name"] = clean_name(request.form["your_name"])
 
     @app.context_processor
     def inject():

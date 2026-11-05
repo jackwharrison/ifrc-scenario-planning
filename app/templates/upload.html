@@ -8,6 +8,8 @@
 <div class="upload-grid"><div>
   <form method="post" enctype="multipart/form-data" action="{{ url_for('main.upload_post', tree_id=tree.id) }}" id="uploadForm">
     <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <div class="field name-field"><label for="yourName"><span style="font-weight:600;font-size:.9rem">Your name</span> <span class="muted" style="font-size:.85rem">(optional)</span></label>
+      <input id="yourName" name="your_name" type="text" maxlength="60" autocomplete="name" value="{{ user }}" placeholder="So others can see who uploaded or edited" style="width:100%;max-width:380px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)"></div>
     <label class="drop" id="drop" for="fileInput">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
       <h2>Drop the workbook here</h2>

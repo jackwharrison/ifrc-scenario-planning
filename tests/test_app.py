@@ -96,6 +96,27 @@ class AppFlowTests(unittest.TestCase):
         other = trees[1] + "/uploads/" + links[0][1]
         self.assertEqual(self.client.get(other).status_code, 404)
 
+    def test_typed_name_is_recorded_without_sign_in(self):
+        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Kyrgyzstan", "your_name": "  Aida   K. "})
+        tree_url = r.headers["Location"].rsplit("/", 1)[0]
+        home = self.client.get("/").get_data(as_text=True)
+        self.assertIn("Aida K.", home)
+        self.assertNotIn("local user", home)
+        self.assertIn('value="Aida K."', self.client.get(tree_url + "/upload").get_data(as_text=True))
+        self.client.post(tree_url + "/upload", data={"csrf": self.csrf, "your_name": "Bakyt",
+                                                     "workbook": (io.BytesIO(example_bytes()), "kg.xlsx")},
+                         content_type="multipart/form-data")
+        self.assertIn("by Bakyt", self.client.get(tree_url + "/check").get_data(as_text=True))
+
+    def test_no_name_shows_nothing(self):
+        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Kyrgyzstan"})
+        tree_url = r.headers["Location"].rsplit("/", 1)[0]
+        self.client.post(tree_url + "/upload", data={"csrf": self.csrf, "workbook": (io.BytesIO(example_bytes()), "kg.xlsx")},
+                         content_type="multipart/form-data")
+        page = self.client.get(tree_url + "/check").get_data(as_text=True)
+        self.assertNotIn("local user", page)
+        self.assertNotIn(" by ", page.split("wb-meta")[1][:80])
+
     def test_post_without_token_is_refused(self):
         r = self.client.post("/start", data={"country": "Kyrgyzstan"})
         self.assertEqual(r.status_code, 400)
