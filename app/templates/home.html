@@ -1,16 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="page-head"><h1>Problem trees</h1>
-<p>Each tree belongs to one country and one type. Open a tree to upload a newer workbook, change scores or export again.</p></div>
+<p>Each tree is a risk profile for one country. Open a tree to upload a newer workbook, change scores or export again.</p></div>
 <div class="btn-row" style="margin:0 0 18px"><a class="btn primary" href="{{ url_for('main.start') }}">Start a new tree</a></div>
 <section class="card">
   {% if trees %}
   <div class="score-wrap"><table class="trees">
-    <thead><tr><th>Country</th><th>Type</th><th>Workbook</th><th class="num">Events</th><th>Last updated</th><th>Created by</th></tr></thead>
+    <thead><tr><th>Country</th><th>Workbook</th><th class="num">Events</th><th>Last updated</th><th>Created by</th></tr></thead>
     <tbody>
     {% for t in trees %}
       <tr><td><a href="{{ url_for('main.tree' if t.data.get('events') else 'main.upload', tree_id=t.id) }}">{{ t.country }}</a></td>
-      <td>{{ 'Risk profile' if t.tree_type == 'risk' else 'Crisis analysis' }}</td>
       <td>{{ t.data.get('file', 'Not uploaded yet') }}</td>
       <td class="num">{{ t.data.get('events', [])|length }}</td>
       <td>{{ t.updated_at }}</td><td>{{ t.created_by or '' }}</td></tr>

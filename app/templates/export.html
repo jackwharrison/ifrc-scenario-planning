@@ -7,7 +7,7 @@
   {% set kept = (b.lines|rejectattr('out')|map(attribute='text')|list) + (b.mine|map(attribute='text')|list) %}
   {% if kept %}<ul>{% for t in kept %}<li>{{ t }}</li>{% endfor %}</ul>{% else %}<p class="gap">To be completed</p>{% endif %}</td>
 {% endmacro %}
-<div class="page-head"><h1>Export</h1><p>Preview of the document, laid out like the DRC problem tree: priorities at the top and context at the bottom. Choose landscape or portrait, and Word or PDF, under the preview.</p></div>
+<div class="page-head"><h1>Export</h1><p>Preview of the document: priorities at the top and context at the bottom. Choose landscape or portrait, and Word or PDF, under the preview.</p></div>
 {% call help("export") %}<ul><li>Go through the list under the preview. None of it blocks the export, but each open point is a gap a reader will notice.</li><li>Download Word if people will edit it, PDF if they will only read it. Share it for review before it goes further.</li><li>Saving a version keeps a copy of this tree, so you can compare it with the next update.</li></ul>{% endcall %}
 {% if request.args.get('saved') %}<p class="ok-note">Version saved.</p>{% endif %}
 <div class="doc-scroll"><div class="doc landscape" id="docPreview" aria-label="Document preview">

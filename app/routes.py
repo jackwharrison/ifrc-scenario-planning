@@ -18,30 +18,16 @@ from .workbook.template import build_template
 bp = Blueprint("main", __name__)
 SAMPLES = os.path.join(os.path.dirname(__file__), "..", "samples")
 
-TREE_TYPES = {
-    "risk": {
-        "name": "Risk profile", "available": True,
-        "what": "For stable or hazard-prone countries, such as Lithuania, Georgia or Kyrgyzstan. Built from past "
-                "events and risk scores. Figures stay current for about 12 months.",
-        "needs": ["The hazard workbook with tab 3 filled in: one row for each significant event since about 2000.",
-                  "Someone to score likelihood and impact for the next 12 months, ideally with the National Society.",
-                  "People who can write the parts that can’t be counted: political and economic context, affected "
-                  "groups, expected consequences."],
-        "note": "Few recorded events, as in many stable countries? The tree says where there are too few to show a "
-                "pattern, and leans more on scenarios and context.",
-    },
-    "crisis": {
-        "name": "Crisis analysis", "available": False,
-        "what": "For protracted or sudden crises, such as Sudan or eastern DRC. Adds a sheet of current figures to "
-                "the workbook. Figures go out of date after about 3 months.",
-        "needs": ["The hazard workbook with tab 3 filled in, including ongoing events such as the conflict itself.",
-                  "The situation figures sheet: people in need, displaced, food insecurity and disease, each with an "
-                  "area, a date and a source, none older than 3 months.",
-                  "Up-to-date information on humanitarian access, from operations or the National Society.",
-                  "People who can write context and security analysis with care for neutrality."],
-        "note": "Crisis trees describe armed actors and access constraints. Check who should see the tree before "
-                "you share it.",
-    },
+# The app builds one kind of tree: a risk profile from past events and risk scores.
+RISK_PROFILE = {
+    "name": "Risk profile",
+    "what": "You will build a risk profile from past events and risk scores. It stays current for about 12 months.",
+    "needs": ["The hazard workbook with tab 3 filled in: one row for each significant event since about 2000.",
+              "Someone to score likelihood and impact for the next 12 months, ideally with the National Society.",
+              "People who can write the parts that can’t be counted: political and economic context, affected "
+              "groups, expected consequences."],
+    "note": "Few recorded events, as in many stable countries? The tree says where there are too few to show a "
+            "pattern, and leans more on scenarios and context.",
 }
 STEPS = [("start", "Start"), ("upload", "Upload"), ("check", "Check"), ("scores", "Score risks"),
          ("tree", "Review tree"), ("export", "Export")]
@@ -55,7 +41,7 @@ def load(tree_id):
     if tree["data"].get("area_label"):
         setup["area_label"] = tree["data"]["area_label"]
     tree["setup"] = setup
-    tree["type"] = TREE_TYPES[tree["tree_type"]]
+    tree["type"] = RISK_PROFILE
     return tree
 
 
@@ -113,16 +99,16 @@ def home():
 
 @bp.get("/start")
 def start():
-    return page("start.html", step=0, types=TREE_TYPES, countries=lists.countries(),
+    return page("start.html", step=0, profile=RISK_PROFILE, countries=lists.countries(),
                 ready=lists.ready_countries())
 
 
 @bp.post("/start")
 def start_post():
-    country, tree_type = request.form.get("country", ""), request.form.get("tree_type", "risk")
-    if not lists.is_country(country) or not TREE_TYPES.get(tree_type, {}).get("available"):
-        abort(400, "Choose a country from the list and a type of tree that is available.")
-    tree_id = storage.create_tree(country, tree_type, current_user())
+    country = request.form.get("country", "")
+    if not lists.is_country(country):
+        abort(400, "Choose a country from the list.")
+    tree_id = storage.create_tree(country, "risk", current_user())
     label = clean_label(request.form.get("area_label"))
     if label and not lists.country_setup(country):
         storage.save_data(tree_id, {"area_label": label})

@@ -6,7 +6,7 @@ The app counts what can be counted and shows how it did it. Everything that need
 
 ## How it works
 
-1. **Start.** Choose the country and the type of tree. Every country can be used (see "Areas and countries").
+1. **Start.** Choose the country. Every country can be used (see "Areas and countries"). The app builds one kind of tree: a risk profile from past events and risk scores.
 2. **Upload.** Upload the completed workbook. The app reads tab 3, the hazard list, by column name.
 3. **Check.** Every row is checked. Rows with errors are left out; warnings are listed with row numbers so they can be fixed in Excel.
 4. **Score risks.** The analyst sets likelihood and impact for each hazard. Scores of 16 or more become priority hazards.
@@ -170,7 +170,6 @@ Back up the database by downloading `/home/data/app.db` through the web app's "A
 
 ## Known limitations and next steps
 
-- **Crisis analysis** (for example Sudan) is shown on the start page but not built yet. It needs a second sheet in the workbook for current figures, and rules that flag figures older than three months.
 - **No geographic map**, on purpose: the area table works for every country from names alone. A map would need P-codes and boundary files per country.
 - **Built-in area lists** exist only for Kyrgyzstan. Pre-filling every country (names from OCHA or geoBoundaries) is a one-off data job; until then, National Societies list their areas in tab Lists.
 - **The Kyrgyzstan example** was standardised by hand from the original hazard list. Some choices (which oblast, death tolls that include neighbouring countries) are judgement calls; check the figures before relying on them.

@@ -127,13 +127,6 @@ main{max-width:1440px;margin:0 auto;padding:24px 24px 56px}
 .field > span{font-weight:600;font-size:.9rem}
 .field select{padding:8px 34px 8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);max-width:320px;appearance:none;
   background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 16px) 52%,calc(100% - 11px) 52%;background-size:5px 5px;background-repeat:no-repeat}
-.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.choice{position:relative;display:block;border:1px solid var(--line);border-radius:8px;padding:12px 14px 12px 40px;cursor:pointer;background:var(--surface)}
-.choice input{position:absolute;left:14px;top:15px;accent-color:var(--red)}
-.choice:has(input:checked){border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red)}
-.choice strong{display:block}
-.choice span{display:block;font-size:.86rem;color:var(--muted);margin-top:3px}
-.choice .tag{display:inline-block;margin-left:0;margin-top:6px}
 .needs{margin:0;padding-left:20px}
 .needs li{margin:0 0 6px}
 .flow .who{grid-column:2;font-size:.82rem;color:var(--ink)}
@@ -312,7 +305,6 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 9
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:720px){
-  .choices{grid-template-columns:1fr}
   .top,.steps{padding-left:12px;padding-right:12px}
   main{padding:18px 12px 48px}
   .layer{grid-template-columns:1fr}

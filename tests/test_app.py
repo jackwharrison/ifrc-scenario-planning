@@ -21,7 +21,7 @@ class AppFlowTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_full_flow(self):
-        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Kyrgyzstan", "tree_type": "risk"})
+        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Kyrgyzstan"})
         self.assertEqual(r.status_code, 302)
         tree_url = r.headers["Location"].rsplit("/", 1)[0]
 
@@ -62,16 +62,12 @@ class AppFlowTests(unittest.TestCase):
         self.assertEqual(self.client.get(tree_url + "/export.rtf").status_code, 404)
 
     def test_post_without_token_is_refused(self):
-        r = self.client.post("/start", data={"country": "Kyrgyzstan", "tree_type": "risk"})
+        r = self.client.post("/start", data={"country": "Kyrgyzstan"})
         self.assertEqual(r.status_code, 400)
 
     def test_country_without_area_list_can_start(self):
-        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Lithuania", "tree_type": "risk"})
+        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Lithuania"})
         self.assertEqual(r.status_code, 302)
-
-    def test_crisis_type_not_available(self):
-        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Kyrgyzstan", "tree_type": "crisis"})
-        self.assertEqual(r.status_code, 400)
 
     def test_template_download(self):
         r = self.client.get("/template/Kyrgyzstan.xlsx")

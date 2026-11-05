@@ -74,6 +74,7 @@ def _tree(row):
 
 
 def create_tree(country, tree_type, user):
+    """tree_type is always "risk" for now; the column is kept so older databases still work."""
     cur = db().execute("INSERT INTO trees (country, tree_type, created_at, created_by, updated_at, data) VALUES (?,?,?,?,?,?)",
                        (country, tree_type, now(), user, now(), "{}"))
     db().commit()

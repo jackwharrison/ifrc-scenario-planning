@@ -6,7 +6,7 @@
 <input type="hidden" name="csrf" value="{{ csrf_token }}">
 <input type="hidden" name="country" id="countryValue" value="{{ ready[0] if ready else '' }}">
 <div class="start-grid"><div>
-  <section class="card"><div class="card-head"><h2>1. Choose the country and type of tree</h2></div><div class="card-body">
+  <section class="card"><div class="card-head"><h2>1. Choose the country</h2></div><div class="card-body">
     <div class="field combo"><label for="countryInput"><span style="font-weight:600;font-size:.9rem">Country</span></label>
       <div class="combo-wrap"><input id="countryInput" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="countryList" autocomplete="off" spellcheck="false" placeholder="Type to search, for example Kyr or DRC" value="{{ ready[0] if ready else '' }}">
       <ul id="countryList" role="listbox" class="combo-list" hidden></ul></div>
@@ -14,17 +14,11 @@
     <div class="field hidden" id="labelField"><label for="areaLabel"><span style="font-weight:600;font-size:.9rem">What are the first-level areas called?</span></label>
       <input id="areaLabel" name="area_label" type="text" maxlength="30" placeholder="For example province, region, district or state" style="max-width:380px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
       <span class="combo-status">Used in the tree and the area table. Leave empty to say “area”.</span></div>
-    <div class="field" role="radiogroup" aria-label="Type of tree"><span>Type of tree</span><div class="choices">
-      {% for key, t in types.items() %}
-      <label class="choice"><input type="radio" name="tree_type" value="{{ key }}" {{ 'checked' if loop.first }}><strong>{{ t.name }}</strong><span>{{ t.what }}</span>{% if not t.available %}<span class="tag man">Not built yet</span>{% endif %}</label>
-      {% endfor %}
-    </div></div>
+    <p class="muted" style="margin:0">{{ profile.what }}</p>
   </div></section>
-  {% for key, t in types.items() %}
-  <section class="card needs-card {{ '' if loop.first else 'hidden' }}" data-type="{{ key }}" style="margin-top:16px"><div class="card-head"><h2>2. What you’ll need</h2><p>For a {{ t.name|lower }}</p></div><div class="card-body">
-    <ul class="needs">{% for n in t.needs %}<li>{{ n }}</li>{% endfor %}</ul><p style="margin-top:10px;font-size:.88rem;color:var(--muted)">{{ t.note }}</p>
+  <section class="card" style="margin-top:16px"><div class="card-head"><h2>2. What you’ll need</h2></div><div class="card-body">
+    <ul class="needs">{% for n in profile.needs %}<li>{{ n }}</li>{% endfor %}</ul><p style="margin-top:10px;font-size:.88rem;color:var(--muted)">{{ profile.note }}</p>
   </div></section>
-  {% endfor %}
 </div>
 <section class="card"><div class="card-head"><h2>3. The five steps</h2></div><div class="card-body">
   <ol class="flow">
@@ -32,7 +26,7 @@
     <li><strong>Check<span class="tag auto">Automatic</span></strong><span>Every row is checked. Rows with errors are left out; warnings show what to fix in Excel.</span><span class="who">Who: whoever uploaded, fixing rows in Excel if needed.</span></li>
     <li><strong>Score risks<span class="tag man">You</span></strong><span>Set likelihood and impact for each hazard. High scores become priority hazards.</span><span class="who">Who: the analyst, ideally with the National Society.</span></li>
     <li><strong>Review tree<span class="tag auto">Automatic</span><span class="tag man">You</span></strong><span>Check the counted boxes, then write the boxes marked “Needs you”.</span><span class="who">Who: the analyst.</span></li>
-    <li><strong>Export<span class="tag auto">Automatic</span></strong><span>Download the Word document in the problem tree layout and save a version.</span><span class="who">Who: the analyst, then a reviewer before sharing.</span></li>
+    <li><strong>Export<span class="tag auto">Automatic</span></strong><span>Download the tree as Word or PDF, landscape or portrait, and save a version.</span><span class="who">Who: the analyst, then a reviewer before sharing.</span></li>
   </ol>
 </div></section></div>
 <div class="btn-row"><button type="submit" class="btn primary" id="startBtn">Start with step 1</button><a class="btn" id="templateLink" href="#">Download the template</a></div>

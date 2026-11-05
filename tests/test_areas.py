@@ -69,7 +69,7 @@ class GenericFlowTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def start(self, label="Counties"):
-        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Lithuania", "tree_type": "risk",
+        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Lithuania",
                                              "area_label": label})
         self.assertEqual(r.status_code, 302)
         return r.headers["Location"].rsplit("/", 1)[0]
@@ -80,7 +80,7 @@ class GenericFlowTests(unittest.TestCase):
         self.assertEqual(r.status_code, 302)
 
     def test_unknown_country_refused(self):
-        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Atlantis", "tree_type": "risk"})
+        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Atlantis"})
         self.assertEqual(r.status_code, 400)
 
     def test_template_for_any_country(self):

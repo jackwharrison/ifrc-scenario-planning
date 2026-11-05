@@ -1,4 +1,4 @@
-/* Start page: searchable country box, type of tree, and what you'll need. */
+/* Start page: searchable country box and the area label for countries without a built-in list. */
 (function(){
   const S = window.START, READY = new Set(S.ready);
   const NAMES = S.countries.map(c => c.name), ALIASES = Object.fromEntries(S.countries.map(c => [c.name, c.aliases || ""]));
@@ -41,15 +41,11 @@
   inp.addEventListener("blur", () => setTimeout(() => { if(!list.hidden){ inp.value = hidden.value; close(); } }, 120));
 
   function update(){
-    const c = hidden.value, type = document.querySelector('input[name="tree_type"]:checked').value;
+    const c = hidden.value;
     $("#countryStatus").innerHTML = !c ? "" : READY.has(c) ? `<span class="tag auto">Area list included</span> The template comes with the areas filled in`
       : `<span class="tag man">Areas from your workbook</span> List your areas in tab Lists of the template, or the app uses the names in tab 3`;
     $("#labelField").classList.toggle("hidden", !c || READY.has(c));
-    document.querySelectorAll(".needs-card").forEach(el => el.classList.toggle("hidden", el.dataset.type !== type));
-    const typeOk = type === "risk";
-    let msg = "";
-    if(!c) msg = "Choose a country.";
-    else if(!typeOk) msg = "Crisis analysis is not built yet. Choose Risk profile.";
+    const msg = c ? "" : "Choose a country.";
     const ok = !msg;
     $("#startBtn").disabled = !ok;
     $("#blocker").textContent = msg; $("#blocker").classList.toggle("hidden", ok);
@@ -57,6 +53,5 @@
     if(c){ t.href = S.templateBase.replace("__C__", encodeURIComponent(c)); t.removeAttribute("aria-disabled"); t.style.pointerEvents = ""; t.style.opacity = ""; }
     else { t.href = "#"; t.setAttribute("aria-disabled", "true"); t.style.pointerEvents = "none"; t.style.opacity = ".45"; }
   }
-  document.querySelectorAll('input[name="tree_type"]').forEach(r => r.addEventListener("change", update));
   update();
 })();
