@@ -252,7 +252,7 @@ def tree_payload(tree):
     events = tree["data"].get("events", [])
     return {
         "view": view_for(tree),
-        "events": [{k: e.get(k) for k in ("_row", "year", "start", "type", "sub", "areas", "killed", "affected",
+        "events": [{k: e.get(k) for k in ("_row", "year", "start", "end", "type", "sub", "areas", "killed", "affected",
                                           "displaced", "houses")} for e in events],
         "areas": area_list(tree)[0],
         "cities": [a["name"] for a in tree["setup"].get("areas", []) if a.get("city")],

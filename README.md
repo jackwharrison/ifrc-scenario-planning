@@ -10,7 +10,7 @@ The app counts what can be counted and shows how it did it. Everything that need
 2. **Upload.** Upload the completed workbook. The app reads tab 3, the hazard list, by column name.
 3. **Check.** Every row is checked. Rows with errors are left out; warnings are listed with row numbers so they can be fixed in Excel.
 4. **Score risks.** The analyst sets likelihood and impact for each hazard. Scores of 16 or more become priority hazards.
-5. **Review tree.** Boxes marked Automatic are written from the counts, each line with the rule and rows behind it. Boxes marked Needs you are written by hand. A "By area" view (By oblast, By province...) shows a table of events per area and hazard type, with filters.
+5. **Review tree.** Boxes marked Automatic are written from the counts, each line with the rule and rows behind it. Boxes marked Needs you are written by hand. A "By area" view (By oblast, By province...) shows a table of events per area and hazard type, with filters. A Calendar view shows events over the years (trend and gaps) and through the year (a seasonal calendar: which hazards happen in which months), filterable by area and hazard type.
 6. **Export.** Choose landscape or portrait, and Word or PDF, then download. Save a version to compare with the next update.
 
 Uploading a newer workbook keeps the scores, edited wording and hand-written lines.

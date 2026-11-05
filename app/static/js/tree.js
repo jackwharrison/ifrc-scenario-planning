@@ -1,7 +1,7 @@
-/* Review page: the tree with its editor panel, and the by-area table with slicers. Data comes from window.TREE. */
+/* Review page: the tree with its editor panel, the by-area table, and the calendar. Data comes from window.TREE. */
 (function(){
   let T = window.TREE;
-  const st = { view:"tree", sel:"shock:hz", editing:null, mType:"all", mSub:"all", mArea:null, q:"", showAll:false };
+  const st = { view:"tree", sel:"shock:hz", editing:null, mType:"all", mSub:"all", mArea:null, q:"", showAll:false, cArea:"", cSel:null };
   const lc = s => /^[A-Z][a-z]/.test(s) ? s[0].toLowerCase() + s.slice(1) : s;
   const layer = k => T.view.layers.find(l => l.key === k);
   const findBox = key => { const [lk, bid] = key.split(":"); const L = layer(lk); return { L, b: L.boxes.find(x => x.id === bid) }; };
@@ -18,6 +18,7 @@
   function render(){
     document.querySelectorAll(".viewtoggle button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === st.view));
     if(st.view === "map"){ drawMap(); return; }
+    if(st.view === "cal"){ drawCal(); return; }
     host.innerHTML = `<div id="todo" aria-live="polite"></div><div class="tree-grid"><div><div class="tree" id="tree"></div>
       <p class="reading">Read from the bottom up: context and shocks lead to impacts, impacts shape conditions, and conditions set priorities.</p></div>
       <aside class="editor" id="editor" aria-live="polite"></aside></div>`;
@@ -169,6 +170,103 @@
     $("#showAll")?.addEventListener("click", () => { st.showAll = true; drawMap(); });
     const qi = $("#areaQ");
     if(qi) qi.addEventListener("input", () => { const pos = qi.selectionStart; st.q = qi.value; drawMap(); const n = $("#areaQ"); n.focus(); n.setSelectionRange(pos, pos); });
+  }
+
+
+  /* ---------- calendar: events over the years, and what happens in each month ---------- */
+  const MON = T.months;
+  /* Months an event covers: start to end, wrapping over the new year (Dec to Feb). No end, or Ongoing: start only. */
+  function activeMonths(e){
+    const s = MON.indexOf(e.start);
+    if(s < 0) return [];
+    let en = MON.indexOf(e.end);
+    if(en < 0) en = s;
+    const out = [];
+    for(let i = s; ; i = (i + 1) % 12){ out.push(i); if(i === en || out.length === 12) break; }
+    return out;
+  }
+  function drawCal(){
+    const area = st.cArea || "";
+    const inArea = e => !area || split(e.areas).includes(area) || split(e.areas).includes("National");
+    const ev = T.events.filter(e => inArea(e) && (st.mType === "all" || e.type === st.mType) && (st.mSub === "all" || e.sub === st.mSub));
+    const types = countBy(T.events.filter(inArea), e => e.type);
+    const subs = st.mType === "all" ? [] : countBy(T.events.filter(e => inArea(e) && e.type === st.mType), e => e.sub);
+    const label = st.mSub !== "all" ? st.mSub : st.mType !== "all" ? st.mType : "All events";
+    const areaWord = T.areaLabel, Area = areaWord[0].toUpperCase() + areaWord.slice(1);
+    const chip = (k, v, l, n, cur) => `<button type="button" class="slice" data-${k}="${esc(v)}" aria-pressed="${cur === v}">${esc(l)}<span>${n}</span></button>`;
+
+    /* Over the years: one row per hazard type (or sub-type once a type is picked), one column per year */
+    const yKey = st.mType === "all" ? (e => e.type) : (e => e.sub);
+    const yRows = countBy(ev, yKey).map(([k]) => k);
+    const allYears = T.events.map(e => e.year).filter(Number.isFinite);
+    const y0 = Math.min(...allYears), y1 = Math.max(...allYears);
+    const years = []; for(let y = y0; y <= y1; y++) years.push(y);
+    const yCount = (r, y) => ev.filter(e => yKey(e) === r && e.year === y);
+    const yMax = Math.max(1, ...yRows.flatMap(r => years.map(y => yCount(r, y).length)));
+
+    /* Each month: one row per sub-type, grouped by hazard type; an event counts in every month it covers */
+    const mRows = countBy(ev, e => e.sub).map(([s, l]) => ({ s, type: l[0].type }))
+      .sort((a, b) => a.type.localeCompare(b.type) || a.s.localeCompare(b.s));
+    const inMonth = (list, m) => list.filter(e => activeMonths(e).includes(m));
+    const mList = s => ev.filter(e => e.sub === s);
+    const mMax = Math.max(1, ...mRows.flatMap(r => MON.map((_, m) => inMonth(mList(r.s), m).length)));
+    const totals = MON.map((_, m) => inMonth(ev, m).length);
+    const tMax = Math.max(1, ...totals);
+    const busiest = MON.map((m, i) => [m, totals[i]]).filter(x => x[1]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const noMonth = ev.filter(e => !activeMonths(e).length);
+
+    const shade = (n, max) => n ? Math.round(15 + (n / max) * 70) : 0;
+    const cell = (kind, row, col, list, max, title) => { const n = list.length, p = shade(n, max), sel = st.cSel && st.cSel.kind === kind && st.cSel.row === row && st.cSel.col === col;
+      return `<td class="c ${n ? "" : "z"} ${p >= 55 ? "dark" : ""} ${sel ? "sel" : ""}" style="--p:${p}%">${n ? `<button type="button" class="calc" data-kind="${kind}" data-row="${esc(row)}" data-col="${col}" title="${esc(title)}: ${plural(n, "event")}" aria-pressed="${sel}">${n}</button>` : ""}</td>`; };
+
+    const yearTable = !yRows.length ? `<p class="muted">No events for this filter.</p>` : `<div class="otab-wrap"><table class="otab cal years">
+      <thead><tr><th>${st.mType === "all" ? "Hazard type" : "Sub-type"}</th>${years.map(y => `<th class="yr"><span>${y % 5 === 0 || y === y0 || y === y1 ? y : ""}</span></th>`).join("")}<th class="num">Total</th></tr></thead>
+      <tbody>${yRows.map(r => `<tr><th scope="row">${esc(r)}</th>${years.map(y => cell("year", r, y, yCount(r, y), yMax, `${r}, ${y}`)).join("")}<td class="num"><b>${ev.filter(e => yKey(e) === r).length}</b></td></tr>`).join("")}</tbody></table></div>`;
+
+    let lastType = "";
+    const monthTable = !mRows.length ? `<p class="muted">No events for this filter.</p>` : `<div class="otab-wrap"><table class="otab cal months">
+      <thead><tr><th>Sub-type</th>${MON.map(m => `<th class="c">${m}</th>`).join("")}</tr></thead>
+      <tbody>${mRows.map(r => { const head = r.type !== lastType && st.mType === "all" ? `<tr class="typehead"><td colspan="13">${esc(r.type)}</td></tr>` : ""; lastType = r.type;
+        return head + `<tr><th scope="row">${esc(r.s)}</th>${MON.map((m, i) => cell("month", r.s, i, inMonth(mList(r.s), i), mMax, `${r.s}, ${m}`)).join("")}</tr>`; }).join("")}
+        <tr class="caltotal"><th scope="row">All ${st.mType === "all" ? "events" : esc(st.mType.toLowerCase())}</th>${MON.map((m, i) => cell("month", "*", i, inMonth(ev, i), tMax, `All, ${m}`)).join("")}</tr></tbody></table></div>`;
+
+    /* Side panel: the events behind the selected cell */
+    let selList = null, selTitle = "";
+    if(st.cSel){
+      const { kind, row, col } = st.cSel;
+      if(kind === "year"){ selList = yCount(row, +col); selTitle = `${row}, ${col}`; }
+      else { selList = inMonth(row === "*" ? ev : mList(row), +col); selTitle = `${row === "*" ? "All events" : row} in ${MON[col]}`; }
+    }
+    const list = l => `<ul class="evlist">${[...l].sort((a, b) => b.year - a.year).map(e => evLine(e).replace("</b>", `</b> <span class="multi">${esc(e.start || "")}${e.end && e.end !== e.start ? "–" + esc(e.end) : ""}${split(e.areas).length ? " · " + esc(split(e.areas).slice(0, 3).join(", ")) + (split(e.areas).length > 3 ? "…" : "") : ""}</span>`)).join("")}</ul>`;
+
+    host.innerHTML = `<div class="map-grid"><section class="card">
+      <div class="card-head"><h2>Calendar</h2><p>${esc(label)}${area ? `, ${esc(area)}` : ""}: ${plural(ev.length, "event")}.</p></div>
+      <div class="card-body">
+        <div class="cal-filters"><label for="calArea">${esc(Area)}</label><select id="calArea"><option value="">All ${esc(areaWord)}s</option>${T.areas.map(a => `<option ${a === area ? "selected" : ""}>${esc(a)}</option>`).join("")}</select>
+          ${area ? `<span class="muted">Nationwide events are included.</span>` : ""}</div>
+        <div class="slicer" role="group" aria-label="Hazard type">${chip("t", "all", "All events", T.events.filter(inArea).length, st.mType)}${types.map(([t, l]) => chip("t", t, t, l.length, st.mType)).join("")}</div>
+        ${subs.length ? `<div class="slicer sub" role="group" aria-label="Hazard sub-type">${chip("s", "all", "All " + st.mType.toLowerCase(), T.events.filter(e => inArea(e) && e.type === st.mType).length, st.mSub)}${subs.map(([s, l]) => chip("s", s, s, l.length, st.mSub)).join("")}</div>` : ""}
+        <h3 class="cal-h">Over the years</h3>
+        <p class="cal-note">Events by the year they started, ${y0} to ${y1}. Gaps can mean no event, or no record.</p>
+        ${yearTable}
+        <h3 class="cal-h">Through the year</h3>
+        <p class="cal-note">${busiest.length ? `Busiest months: ${busiest.map(([m, n]) => `${m} (${n})`).join(", ")}. ` : ""}An event counts in every month from its start to its end month, so a December to February cold wave shows in all three.${noMonth.length ? ` ${plural(noMonth.length, "event")} without a start month ${noMonth.length === 1 ? "is" : "are"} left out.` : ""}</p>
+        ${monthTable}
+        <div class="legend" style="margin-top:10px"><span class="sw" style="--p:0%"></span>None<span class="sw" style="--p:30%"></span>Fewer<span class="sw" style="--p:85%"></span>More events</div>
+      </div></section>
+      <div class="side"><section class="card"><div class="card-head"><h2>${selList ? esc(selTitle) : "Events"}</h2><p>${selList ? plural(selList.length, "event") : "Click a cell to see the events behind it"}</p></div>
+        <div class="card-body">${selList ? (selList.length ? list(selList) : `<p class="muted">None.</p>`) : `<p class="muted">Use the years to see trends and gaps, and the months to see when to prepare. Both follow the filters on the left.</p>`}</div></section></div>
+    </div>`;
+    host.querySelectorAll(".slice[data-t]").forEach(b => b.onclick = () => { st.mType = b.dataset.t; st.mSub = "all"; st.cSel = null; drawCal(); host.querySelector(`.slice[data-t="${CSS.escape(st.mType)}"]`)?.focus(); });
+    host.querySelectorAll(".slice[data-s]").forEach(b => b.onclick = () => { st.mSub = b.dataset.s; st.cSel = null; drawCal(); host.querySelector(`.slice[data-s="${CSS.escape(st.mSub)}"]`)?.focus(); });
+    $("#calArea").onchange = e => { st.cArea = e.target.value; st.cSel = null; drawCal(); $("#calArea").focus(); };
+    host.querySelectorAll(".calc").forEach(b => b.onclick = () => {
+      const k = { kind: b.dataset.kind, row: b.dataset.row, col: b.dataset.col };
+      st.cSel = st.cSel && st.cSel.kind === k.kind && st.cSel.row === k.row && st.cSel.col === k.col ? null : k;
+      drawCal();
+      host.querySelector(`.calc[data-kind="${k.kind}"][data-row="${CSS.escape(k.row)}"][data-col="${k.col}"]`)?.focus();
+      if(st.cSel && matchMedia("(max-width:1050px)").matches) host.querySelector(".side")?.scrollIntoView({behavior:"smooth"});
+    });
   }
 
   document.querySelectorAll(".viewtoggle button").forEach(b => b.onclick = () => { st.view = b.dataset.v; render(); });
