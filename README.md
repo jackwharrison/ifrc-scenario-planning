@@ -11,7 +11,7 @@ The app counts what can be counted and shows how it did it. Everything that need
 3. **Check.** Every row is checked. Rows with errors are left out; warnings are listed with row numbers so they can be fixed in Excel.
 4. **Score risks.** The analyst sets likelihood and impact for each hazard. Scores of 16 or more become priority hazards.
 5. **Review tree.** Boxes marked Automatic are written from the counts, each line with the rule and rows behind it. Boxes marked Needs you are written by hand. A "By area" view (By oblast, By province...) shows a table of events per area and hazard type, with filters.
-6. **Export.** Download the Word document and save a version.
+6. **Export.** Choose landscape or portrait, and Word or PDF, then download. Save a version to compare with the next update.
 
 Uploading a newer workbook keeps the scores, edited wording and hand-written lines.
 
@@ -27,6 +27,7 @@ app/
   workbook/            reading tab 3, the row checks, and the blank template generator
   tree/rules.py        the counting rules that write the tree
   export/word.py       the Word document
+  export/pdf.py        the same layout as a PDF (reportlab, with the Liberation Sans font in export/fonts)
   templates/           the HTML pages
   static/              styles, scripts, IFRC logo
 samples/               the Kyrgyzstan example workbook
@@ -91,7 +92,9 @@ These steps use the Azure portal. Names in quotes are the labels you will see; A
 | `SECRET_KEY` | a long random string (for example from `python -c "import secrets; print(secrets.token_hex(32))"`) |
 | `DATABASE_PATH` | `/home/data/app.db` |
 | `SCM_DO_BUILD_DURING_DEPLOYMENT` | `true` |
-| `CLASSIFICATION` | `Internal` (printed at the bottom of the Word document) |
+| `CLASSIFICATION` | `Internal` (printed at the bottom of the Word and PDF documents) |
+| `SUPPORT_EMAIL` | optional, the support address in the page footer (default `jack.harrison@ifrc.org`) |
+| `REPO_URL` | optional, the "Source code on GitHub" link in the page footer |
 
 **3. Startup command** (web app, then "Configuration", "General settings", "Startup command")
 

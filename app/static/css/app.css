@@ -344,3 +344,20 @@ form.inline{display:inline}
 a.btn{color:var(--ink);text-decoration:none}
 a.btn.primary{color:var(--on-red)}
 a.act{text-decoration:none;display:inline-block}
+
+/* Export options and preview orientation */
+.export-opts{display:flex;flex-wrap:wrap;gap:12px 28px;margin:16px 0 4px}
+.export-opts fieldset{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.export-opts legend{font-weight:600;font-size:.88rem;margin-bottom:6px;padding:0;width:100%}
+.seg{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg span{display:inline-block;padding:6px 14px;border:1px solid var(--line);border-radius:999px;font-weight:600;font-size:.88rem;background:var(--surface)}
+.seg input:checked + span{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.seg input:focus-visible + span{outline:2px solid var(--red);outline-offset:2px}
+.doc.portrait{min-width:0;max-width:720px}
+.doc.portrait .dc{font-size:.68rem}
+/* Footer on every page */
+.site-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 24px;max-width:1440px;margin:0 auto;padding:16px 24px calc(env(safe-area-inset-bottom,0px) + 20px);border-top:1px solid var(--line);font-size:.85rem;color:var(--muted)}
+.site-foot p{margin:0}
+.site-foot a{color:var(--ink);font-weight:600;text-underline-offset:3px}
+@media (max-width:720px){.site-foot{padding-left:12px;padding-right:12px}}

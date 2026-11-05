@@ -1,4 +1,4 @@
-"""Writes the problem tree as a one-page landscape Word document, laid out like the eastern DRC problem tree:
+"""Writes the problem tree as a Word document (A4, landscape or portrait), laid out like the eastern DRC problem tree:
 Current priorities, Humanitarian conditions, Impact, Shock and Context as stacked tables."""
 import io
 import os
@@ -106,16 +106,18 @@ def _arrow(doc):
     _para(doc, "▲", size=7, colour=RGBColor(0x9A, 0x9A, 0x9E), align=WD_ALIGN_PARAGRAPH.CENTER, space_after=0)
 
 
-def build_docx(view, meta):
-    """view: output of tree.rules.apply_edits. meta: dict with country, type_name, events, file, classification."""
+def build_docx(view, meta, orientation="landscape"):
+    """view: output of tree.rules.apply_edits. meta: dict with country, type_name, events, file, classification.
+    orientation: "landscape" (default, like the DRC problem tree) or "portrait"."""
     doc = Document()
     section = doc.sections[0]
-    section.orientation = WD_ORIENT.LANDSCAPE
-    section.page_width, section.page_height = Cm(29.7), Cm(21.0)
+    page_w, page_h = (29.7, 21.0) if orientation == "landscape" else (21.0, 29.7)
+    section.orientation = WD_ORIENT.LANDSCAPE if orientation == "landscape" else WD_ORIENT.PORTRAIT
+    section.page_width, section.page_height = Cm(page_w), Cm(page_h)
     for side in ("left_margin", "right_margin"):
         setattr(section, side, Cm(1.3))
     section.top_margin, section.bottom_margin = Cm(1.1), Cm(1.1)
-    width = 29.7 - 2.6
+    width = page_w - 2.6
     normal = doc.styles["Normal"]
     normal.font.name, normal.font.size = FONT, Pt(8)
 

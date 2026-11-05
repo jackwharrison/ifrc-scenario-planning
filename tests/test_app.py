@@ -48,6 +48,19 @@ class AppFlowTests(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.data.startswith(b"PK"))
 
+        # Export options: Word or PDF, landscape or portrait
+        from docx import Document
+        r = self.client.get(tree_url + "/download?fmt=docx&orientation=portrait")
+        section = Document(io.BytesIO(r.data)).sections[0]
+        self.assertLess(section.page_width, section.page_height)
+        self.assertIn("_portrait.docx", r.headers["Content-Disposition"])
+        for orientation in ("landscape", "portrait"):
+            r = self.client.get(tree_url + f"/download?fmt=pdf&orientation={orientation}")
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.mimetype, "application/pdf")
+            self.assertTrue(r.data.startswith(b"%PDF"))
+        self.assertEqual(self.client.get(tree_url + "/export.rtf").status_code, 404)
+
     def test_post_without_token_is_refused(self):
         r = self.client.post("/start", data={"country": "Kyrgyzstan", "tree_type": "risk"})
         self.assertEqual(r.status_code, 400)
@@ -64,6 +77,11 @@ class AppFlowTests(unittest.TestCase):
         r = self.client.get("/template/Kyrgyzstan.xlsx")
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.data.startswith(b"PK"))
+
+    def test_footer_on_every_page(self):
+        page = self.client.get("/start").get_data(as_text=True)
+        self.assertIn("mailto:jack.harrison@ifrc.org", page)
+        self.assertIn("https://github.com/jackwharrison/ifrc-scenario-planning", page)
 
     def test_health(self):
         self.assertEqual(self.client.get("/health").get_json(), {"status": "ok"})

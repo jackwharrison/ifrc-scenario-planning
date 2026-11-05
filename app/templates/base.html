@@ -42,6 +42,10 @@
 <main>
 {% block content %}{% endblock %}
 </main>
+<footer class="site-foot">
+  <p>Need support? Contact <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+  <p><a href="{{ repo_url }}" target="_blank" rel="noopener">Source code on GitHub</a></p>
+</footer>
 <div class="toast" id="toast" role="status"></div>
 <script src="{{ url_for('static', filename='js/common.js') }}"></script>
 {% block scripts %}{% endblock %}

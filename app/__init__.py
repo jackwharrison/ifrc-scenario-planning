@@ -19,6 +19,9 @@ def create_app(test_config=None):
         DATABASE_PATH=os.environ.get("DATABASE_PATH", os.path.join(app.instance_path, "app.db")),
         MAX_CONTENT_LENGTH=10 * 1024 * 1024,      # 10 MB is far more than a hazard workbook needs
         CLASSIFICATION=os.environ.get("CLASSIFICATION", "Internal"),
+        # Shown in the footer of every page
+        REPO_URL=os.environ.get("REPO_URL", "https://github.com/jackwharrison/ifrc-scenario-planning"),
+        SUPPORT_EMAIL=os.environ.get("SUPPORT_EMAIL", "jack.harrison@ifrc.org"),
         SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE", "true").lower() == "true",
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
@@ -42,7 +45,8 @@ def create_app(test_config=None):
     def inject():
         if "csrf" not in session:
             session["csrf"] = secrets.token_hex(16)
-        return {"csrf_token": session["csrf"], "user": current_user()}
+        return {"csrf_token": session["csrf"], "user": current_user(),
+                "repo_url": app.config["REPO_URL"], "support_email": app.config["SUPPORT_EMAIL"]}
 
     @app.get("/health")
     def health():

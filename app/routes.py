@@ -7,6 +7,7 @@ from flask import (Blueprint, abort, current_app, jsonify, redirect, render_temp
                    url_for)
 
 from . import current_user, lists, storage
+from .export.pdf import build_pdf
 from .export.word import build_docx
 from .tree.rules import BANDS, HIGH_RISK, apply_edits, build_tree, hazards_present, risk_band
 from .workbook.checks import check_events
@@ -315,16 +316,33 @@ def export(tree_id):
     return page("export.html", t, 5, view=view, meta=_meta(t), checks=checks, versions=storage.list_versions(tree_id))
 
 
-@bp.get("/trees/<int:tree_id>/export.docx")
-def export_docx(tree_id):
+EXPORT_FORMATS = {
+    "docx": (build_docx, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    "pdf": (build_pdf, "application/pdf"),
+}
+
+
+@bp.get("/trees/<int:tree_id>/export.<fmt>")
+def export_file(tree_id, fmt):
+    """Download the tree as Word (.docx) or PDF, in landscape (default) or portrait: ?orientation=portrait."""
+    if fmt not in EXPORT_FORMATS:
+        abort(404)
     t = load(tree_id)
     view = view_for(t)
     if not view:
         abort(404)
-    data = build_docx(view, _meta(t))
-    return send_file(io.BytesIO(data), as_attachment=True,
-                     download_name=f"Problem_tree_{lists.slug(t['country'])}.docx",
-                     mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    orientation = "portrait" if request.args.get("orientation") == "portrait" else "landscape"
+    build, mimetype = EXPORT_FORMATS[fmt]
+    data = build(view, _meta(t), orientation)
+    name = f"Problem_tree_{lists.slug(t['country'])}{'_portrait' if orientation == 'portrait' else ''}.{fmt}"
+    return send_file(io.BytesIO(data), as_attachment=True, download_name=name, mimetype=mimetype)
+
+
+@bp.get("/trees/<int:tree_id>/download")
+def export_download(tree_id):
+    """Target of the form on the export page: ?fmt=docx|pdf&orientation=landscape|portrait."""
+    fmt = request.args.get("fmt", "docx")
+    return export_file(tree_id, fmt if fmt in EXPORT_FORMATS else "docx")
 
 
 @bp.post("/trees/<int:tree_id>/versions")
