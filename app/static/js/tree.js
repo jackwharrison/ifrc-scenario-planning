@@ -18,21 +18,38 @@
   function render(){
     document.querySelectorAll(".viewtoggle button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === st.view));
     if(st.view === "map"){ drawMap(); return; }
-    host.innerHTML = `<div class="tree-grid"><div><div class="tree" id="tree"></div>
+    host.innerHTML = `<div id="todo" aria-live="polite"></div><div class="tree-grid"><div><div class="tree" id="tree"></div>
       <p class="reading">Read from the bottom up: context and shocks lead to impacts, impacts shape conditions, and conditions set priorities.</p></div>
       <aside class="editor" id="editor" aria-live="polite"></aside></div>`;
     drawTree(); drawEditor();
   }
+  /* A box needs you when it has an analyst part (manual or mixed) and nothing has been added by hand yet. */
+  const needsYou = b => b.kind !== "auto" && !b.mine.length;
+  const PEN = `<svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M8.5 1.5l2 2-6.5 6.5H2v-2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
+  function drawTodo(){
+    const todo = T.view.layers.flatMap(L => L.boxes.filter(needsYou).map(b => ({L, b})));
+    const el = $("#todo");
+    if(!todo.length){ el.innerHTML = `<p class="todo-done">Every box marked Needs you has your input. Check the wording, then continue to export.</p>`; return; }
+    el.innerHTML = `<div class="todo-bar"><p><b>${plural(todo.length, "box", "boxes")} need${todo.length === 1 ? "s" : ""} you.</b> These parts can’t be counted from the workbook: write them from your own analysis and the National Society’s knowledge.</p>
+      <div class="todo-list">${todo.map(({L, b}) => `<button type="button" class="todo-chip" data-key="${L.key}:${b.id}" style="--c:${L.color}">${PEN}${esc(b.title)}</button>`).join("")}</div></div>`;
+    el.querySelectorAll(".todo-chip").forEach(c => c.onclick = () => {
+      st.sel = c.dataset.key; st.editing = null; drawTree(); drawEditor();
+      document.querySelector(`.box[data-key="${c.dataset.key}"]`)?.scrollIntoView({behavior:"smooth", block:"center"});
+    });
+  }
   function drawTree(){
+    drawTodo();
     let h = "";
     T.view.layers.forEach((L, li) => {
       h += `<section class="layer" style="--c:${L.color}" aria-label="${esc(L.name)}"><div class="layer-head"><h2>${esc(L.name)}</h2><p>${esc(L.hint)}</p></div>
         <div class="boxes" style="grid-template-columns:repeat(${L.boxes.length},minmax(0,1fr))">`;
       L.boxes.forEach(b => {
         const key = L.key + ":" + b.id, kept = b.lines.filter(x => !x.out).map(x => x.text).concat(b.mine.map(m => m.text));
-        const prev = kept.length ? kept.map(t => t.replace(/\.$/, "")).join("; ") : (b.kind === "manual" ? "To be written" : "Nothing yet");
-        const chips = (b.kind !== "manual" ? `<span class="chip auto">Automatic</span>` : "") + (b.kind !== "auto" ? `<span class="chip man">Needs you</span>` : "");
-        h += `<button type="button" class="box" data-key="${key}" aria-pressed="${st.sel === key}"><span class="box-title">${esc(b.title)}</span>
+        const todo = needsYou(b);
+        const prev = kept.length ? kept.map(t => t.replace(/\.$/, "")).join("; ") : (b.kind === "manual" ? "To be written by you" : "Nothing yet");
+        const chips = (todo ? `<span class="chip man">${PEN}Needs you</span>` : b.kind !== "auto" ? `<span class="chip mine">✓ Your input added</span>` : "")
+          + (b.kind !== "manual" ? `<span class="chip auto">Automatic</span>` : "");
+        h += `<button type="button" class="box ${todo ? "todo" : ""}" data-key="${key}" aria-pressed="${st.sel === key}"><span class="box-title">${esc(b.title)}</span>
           <span class="box-preview ${kept.length ? "" : "none"}">${esc(prev)}</span><span class="box-meta">${chips}${kept.length ? `<span class="chip">${plural(kept.length, "line")}</span>` : ""}</span></button>`;
       });
       h += `</div></section>`;
@@ -53,7 +70,8 @@
   }
   function drawEditor(){
     const { L, b } = findBox(st.sel);
-    let h = `<div class="ed-head" style="--c:${L.color}"><p class="ed-layer">${esc(L.name)}</p><h2>${esc(b.title)}</h2>${b.note ? `<p class="ed-note">${esc(b.note)}</p>` : ""}</div><div class="ed-body">`;
+    let h = `<div class="ed-head" style="--c:${L.color}"><p class="ed-layer">${esc(L.name)}</p><h2>${esc(b.title)}</h2>${b.note ? `<p class="ed-note">${esc(b.note)}</p>` : ""}
+      ${needsYou(b) ? `<p class="ed-needs">${PEN}Needs you: ${b.kind === "manual" ? "nothing can be counted for this box, so it is empty until you add a line below." : "the counts above are a start; add your analysis below."}</p>` : ""}</div><div class="ed-body">`;
     if(b.chart) h += `<h3>Floods, mudflows and landslides by start month</h3>${seasonChart()}`;
     if(b.kind !== "manual"){
       h += `<h3>Written from the workbook</h3>`;

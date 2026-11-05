@@ -115,6 +115,27 @@ def start_post():
     return redirect(url_for("main.upload", tree_id=tree_id))
 
 
+@bp.get("/trees/<int:tree_id>/start")
+def tree_start(tree_id):
+    """The Start step for a tree that already exists: shows its country and lets the area word be changed."""
+    tree = load(tree_id)
+    return page("start.html", tree, 0, profile=RISK_PROFILE, countries=[], ready=[])
+
+
+@bp.post("/trees/<int:tree_id>/start")
+def tree_start_post(tree_id):
+    tree = load(tree_id)
+    if not tree["setup"].get("prefilled"):
+        data = tree["data"]
+        label = clean_label(request.form.get("area_label"))
+        if label:
+            data["area_label"] = label
+        else:
+            data.pop("area_label", None)
+        storage.save_data(tree_id, data)
+    return redirect(url_for("main.upload", tree_id=tree_id))
+
+
 @bp.get("/template/<country>.xlsx")
 def template(country):
     if not lists.is_country(country):

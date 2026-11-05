@@ -61,6 +61,17 @@ class AppFlowTests(unittest.TestCase):
             self.assertTrue(r.data.startswith(b"%PDF"))
         self.assertEqual(self.client.get(tree_url + "/export.rtf").status_code, 404)
 
+    def test_start_step_reachable_from_a_tree(self):
+        r = self.client.post("/start", data={"csrf": self.csrf, "country": "Lithuania", "area_label": "counties"})
+        tree_url = r.headers["Location"].rsplit("/", 1)[0]
+        page = self.client.get(tree_url + "/upload").get_data(as_text=True)
+        self.assertIn(f'href="{tree_url}/start"', page)
+        page = self.client.get(tree_url + "/start").get_data(as_text=True)
+        self.assertIn('value="county"', page)
+        r = self.client.post(tree_url + "/start", data={"csrf": self.csrf, "area_label": "Municipalities"})
+        self.assertTrue(r.headers["Location"].endswith("/upload"))
+        self.assertIn('value="municipality"', self.client.get(tree_url + "/start").get_data(as_text=True))
+
     def test_post_without_token_is_refused(self):
         r = self.client.post("/start", data={"country": "Kyrgyzstan"})
         self.assertEqual(r.status_code, 400)

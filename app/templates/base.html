@@ -31,6 +31,8 @@
     {% set cls = 'step' ~ (' done' if n < step else '') %}
     {% if n == step %}
       <span class="{{ cls }}" aria-current="step"><span class="num">{% if n == 0 %}<svg width="10" height="11" viewBox="0 0 10 11" aria-hidden="true"><path d="M1.5 10.5V1M1.5 1.5h6l-1.5 2.2 1.5 2.3h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>{% else %}{{ n }}{% endif %}</span><span class="lbl">{{ label }}</span></span>
+    {% elif tree and n == 0 %}
+      <a class="{{ cls }}" href="{{ url_for('main.tree_start', tree_id=tree.id) }}"><span class="num"><svg width="10" height="11" viewBox="0 0 10 11" aria-hidden="true"><path d="M1.5 10.5V1M1.5 1.5h6l-1.5 2.2 1.5 2.3h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span><span class="lbl">{{ label }}</span></a>
     {% elif tree and n >= 1 and n <= reached %}
       <a class="{{ cls }}" href="{{ url_for('main.' ~ key, tree_id=tree.id) }}"><span class="num">{{ n }}</span><span class="lbl">{{ label }}</span></a>
     {% else %}

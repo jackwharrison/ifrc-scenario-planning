@@ -2,11 +2,23 @@
 {% block content %}
 <div class="page-head" id="guide"><h1>Build a problem tree</h1>
 <p>This tool turns a completed hazard workbook into a problem tree in IFRC layout. It counts what can be counted, shows you how, and leaves the judgement to you. Expect to spend most of your time on steps 3 and 4.</p></div>
-<form method="post" action="{{ url_for('main.start_post') }}" id="startForm">
+{% if tree %}
+<p class="info-note">You are working on the <b>{{ tree.country }}</b> tree. Change the area word here, or go on to the next step. Your upload, scores and edits are kept.</p>
+{% endif %}
+<form method="post" action="{{ url_for('main.tree_start_post', tree_id=tree.id) if tree else url_for('main.start_post') }}" id="startForm">
 <input type="hidden" name="csrf" value="{{ csrf_token }}">
-<input type="hidden" name="country" id="countryValue" value="{{ ready[0] if ready else '' }}">
+{% if not tree %}<input type="hidden" name="country" id="countryValue" value="{{ ready[0] if ready else '' }}">{% endif %}
 <div class="start-grid"><div>
-  <section class="card"><div class="card-head"><h2>1. Choose the country</h2></div><div class="card-body">
+  <section class="card"><div class="card-head"><h2>1. {{ 'Country' if tree else 'Choose the country' }}</h2></div><div class="card-body">
+    {% if tree %}
+    <div class="field"><span>Country</span><p class="fixed-country">{{ tree.country }}</p>
+      <p class="combo-status">To build a tree for another country, <a href="{{ url_for('main.start') }}">start a new tree</a>.</p></div>
+    {% if not tree.setup.prefilled %}
+    <div class="field"><label for="areaLabel"><span style="font-weight:600;font-size:.9rem">What are the first-level areas called?</span></label>
+      <input id="areaLabel" name="area_label" type="text" maxlength="30" value="{{ tree.data.get('area_label', '') }}" placeholder="For example province, region, district or state" style="max-width:380px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+      <span class="combo-status">Used in the tree and the area table. Leave empty to say “area”.</span></div>
+    {% endif %}
+    {% else %}
     <div class="field combo"><label for="countryInput"><span style="font-weight:600;font-size:.9rem">Country</span></label>
       <div class="combo-wrap"><input id="countryInput" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="countryList" autocomplete="off" spellcheck="false" placeholder="Type to search, for example Kyr or DRC" value="{{ ready[0] if ready else '' }}">
       <ul id="countryList" role="listbox" class="combo-list" hidden></ul></div>
@@ -14,6 +26,7 @@
     <div class="field hidden" id="labelField"><label for="areaLabel"><span style="font-weight:600;font-size:.9rem">What are the first-level areas called?</span></label>
       <input id="areaLabel" name="area_label" type="text" maxlength="30" placeholder="For example province, region, district or state" style="max-width:380px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
       <span class="combo-status">Used in the tree and the area table. Leave empty to say “area”.</span></div>
+    {% endif %}
     <p class="muted" style="margin:0">{{ profile.what }}</p>
   </div></section>
   <section class="card" style="margin-top:16px"><div class="card-head"><h2>2. What you’ll need</h2></div><div class="card-body">
@@ -29,11 +42,15 @@
     <li><strong>Export<span class="tag auto">Automatic</span></strong><span>Download the tree as Word or PDF, landscape or portrait, and save a version.</span><span class="who">Who: the analyst, then a reviewer before sharing.</span></li>
   </ol>
 </div></section></div>
+{% if tree %}
+<div class="btn-row"><button type="submit" class="btn primary">Save and continue to upload</button><a class="btn" href="{{ url_for('main.template', country=tree.country) }}">Download the template</a></div>
+{% else %}
 <div class="btn-row"><button type="submit" class="btn primary" id="startBtn">Start with step 1</button><a class="btn" id="templateLink" href="#">Download the template</a></div>
+{% endif %}
 <p class="blocker hidden" id="blocker" role="status"></p>
 </form>
 {% endblock %}
-{% block scripts %}
+{% block scripts %}{% if not tree %}
 <script>window.START = {{ {"countries": countries, "ready": ready, "templateBase": url_for('main.template', country='__C__')}|tojson }};</script>
 <script src="{{ url_for('static', filename='js/start.js') }}"></script>
-{% endblock %}
+{% endif %}{% endblock %}
